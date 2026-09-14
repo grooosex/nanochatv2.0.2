@@ -1,0 +1,96 @@
+import type { Chat, ChatMessage, MemorySnap } from "./types";
+
+export const MEMORY_CHAR_CAP = 3800;
+export const MEMORY_TARGET = "900–1400 字";
+
+export function clipMemoryText(text: string): string {
+  const t = text.trim();
+  if (t.length <= MEMORY_CHAR_CAP) return t;
+  return t.slice(0, MEMORY_CHAR_CAP).replace(/\s+\S*$/, "").trim();
+}
+
+export function isPlausibleMemory(text: string): boolean {
+  const t = text.trim();
+  if (t.length < 24) return false;
+  if (/^(好的|收到|ok|done|无|没有|（无）)/i.test(t) && t.length < 80) return false;
+  return true;
+}
+
+export function foldIntervalMessages(contextTurns: number): number {
+  const turns = Math.max(4, contextTurns);
+  return Math.max(4, turns - 6) * 2;
+}
+
+/** Next chunk to compress, or null if not yet. */
+export function planFold(
+  n: number,
+  covered: number,
+  foldAt: number,
+  windowMsgs: number,
+  intervalMsgs: number,
+): { start: number; end: number } | null {
+  const W = windowMsgs;
+  const I = intervalMsgs;
+  if (n < W || I < 2) return null;
+  if (foldAt > 0 && n < foldAt + I) return null;
+  if (covered <= 0) return { start: 0, end: Math.min(I, n) };
+  const end = covered + I;
+  if (end > n) return null;
+  return { start: covered, end };
+}
+
+/** How far the current line should be covered if every fold had succeeded. */
+export function foldCoveredEnd(n: number, windowMsgs: number, intervalMsgs: number): number {
+  if (n < windowMsgs || intervalMsgs < 2) return 0;
+  const k = 1 + Math.floor((n - windowMsgs) / intervalMsgs);
+  return Math.min(k * intervalMsgs, n);
+}
+
+export function rewindSnaps(snaps: MemorySnap[] | undefined, keepCount: number): MemorySnap[] {
+  return (snaps ?? []).filter((s) => s.covered <= keepCount && s.covered >= 0);
+}
+
+export function applySnaps(snaps: MemorySnap[]): Pick<Chat, "memory" | "memoryUntil" | "memoryFoldAt" | "memorySnaps"> {
+  const last = snaps[snaps.length - 1];
+  return {
+    memorySnaps: snaps,
+    memory: last?.text ?? "",
+    memoryUntil: last?.covered ?? 0,
+    memoryFoldAt: last?.foldAt ?? 0,
+  };
+}
+
+export function pushSnap(snaps: MemorySnap[] | undefined, snap: MemorySnap): MemorySnap[] {
+  const prev = (snaps ?? []).filter((s) => s.covered < snap.covered);
+  return [...prev, snap];
+}
+
+export function formatMemoryDialog(messages: ChatMessage[]): string {
+  return messages
+    .filter((m) => m.content?.trim())
+    .map((m) => `${m.role === "user" ? "用户" : m.characterName || "角色"}：${m.content.trim()}`)
+    .join("\n");
+}
+
+export function normalizeChatMemory(c: Chat): Chat {
+  let snaps = Array.isArray(c.memorySnaps)
+    ? c.memorySnaps.filter((s) => s && typeof s.text === "string" && typeof s.covered === "number")
+    : [];
+  if (!snaps.length && c.memory?.trim()) {
+    snaps = [
+      {
+        covered: Math.max(0, c.memoryUntil || 0),
+        text: c.memory,
+        foldAt: Math.max(0, c.memoryFoldAt || c.memoryUntil || 0),
+      },
+    ];
+  }
+  return { ...c, ...applySnaps(snaps) };
+}
+
+export const emptyMemory = (): Pick<Chat, "memory" | "memoryUntil" | "memoryFoldAt" | "memorySnaps"> => ({
+  memory: "",
+  memoryUntil: 0,
+  memoryFoldAt: 0,
+  memorySnaps: [],
+});

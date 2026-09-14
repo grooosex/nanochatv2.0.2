@@ -1,0 +1,1 @@
+import{o as e}from"./routes-M5W4yzvx.js";export{e as sendOpening};

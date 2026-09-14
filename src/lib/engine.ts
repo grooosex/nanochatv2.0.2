@@ -1,0 +1,343 @@
+import { grokOnce } from "./grok-client";
+import { chatContextBlock, fieldPolishHint, groupFormatHint, IMAGE_SHOT_RULES, roleSnapshot, splitChatPrompt, statusBarFor } from "./prompts";
+import { buildPolishUserContent, extractFieldText, parsePolishJson } from "./role-polish";
+import { formatUserForChat } from "./user-markup";
+import { stripSpeakerPrefix } from "./rp-text";
+import { buildNaiPayload } from "./nai";
+import { sanitizeNaiTags, assignCharTags, extractJsonObject, resolveAbsentIds } from "./nai-tags";
+import { RECENT_TURNS } from "./constants";
+import { saveBlob, useApp } from "./store";
+import { presetStyle } from "./st-preset";
+import type { Chat, ChatMessage, GenImage, GrokModelId } from "./types";
+import { randomSeed, uid } from "./utils";
+import {
+  clipMemoryText,
+  foldIntervalMessages,
+  formatMemoryDialog,
+  isPlausibleMemory,
+  planFold,
+} from "./chat-memory";
+
+export function stripStatus(text: string) {
+  const i = text.lastIndexOf("状态栏:");
+  if (i < 0) return { body: text.trim(), status: "" };
+  return { body: text.slice(0, i).trim(), status: text.slice(i).trim() };
+}
+
+export function recentWindow() {
+  const s = useApp.getState().settings;
+  const turns = s.chatSource === "api" ? Math.max(4, s.llmParams.contextTurns) : RECENT_TURNS;
+  return turns * 2;
+}
+
+export function foldWindow() {
+  const s = useApp.getState().settings;
+  const turns = s.chatSource === "api" ? Math.max(4, s.llmParams.contextTurns) : RECENT_TURNS;
+  return { W: turns * 2, I: foldIntervalMessages(turns) };
+}
+
+function historyMessages(chat: Chat, upto?: number) {
+  const msgs = chat.messages.slice(0, upto ?? chat.messages.length);
+  const start = Math.max(0, msgs.length - recentWindow());
+  const recent = msgs.slice(start);
+  return recent
+    .filter((m) => m.role !== "narrator" || m.content)
+    .map((m) => ({
+      role: m.role === "user" ? ("user" as const) : ("assistant" as const),
+      content:
+        m.role === "user"
+          ? formatUserForChat(m.content)
+          : stripSpeakerPrefix(m.content, [
+              m.characterName,
+              chat.name,
+              ...chat.characters.map((c) => c.name),
+              "角色",
+            ]),
+    }));
+}
+
+export async function polishAll(chat: Chat, grokModelId: GrokModelId, instruction?: string) {
+  const style = presetStyle(useApp.getState().settings, "polish", chat);
+  const text = await grokOnce({
+    task: instruction?.trim() ? "personalize" : "polish",
+    grokModelId,
+    extraSystem: instruction?.trim() || undefined,
+    messages: [{ role: "user", content: buildPolishUserContent(chat) }],
+    ...style,
+  });
+  return parsePolishJson(text);
+}
+
+export async function polishField(
+  chat: Chat,
+  grokModelId: GrokModelId,
+  field: string,
+  instruction?: string,
+  charId?: string,
+) {
+  const char = charId ? chat.characters.find((c) => c.id === charId) : undefined;
+  const charIndex = charId ? chat.characters.findIndex((c) => c.id === charId) : -1;
+  let current = "";
+  if (char && (field === "name" || field === "persona" || field === "speech" || field === "appearance")) {
+    current = char[field];
+  } else if (field === "overview") current = chat.overview;
+  else if (field === "opening") current = chat.opening;
+  else if (field === "statusBar") current = chat.statusBar;
+  const charLabel =
+    char && chat.isMulti
+      ? `角色${charIndex + 1}${char.name ? "「" + char.name + "」" : ""}`
+      : char
+        ? char.name
+          ? `角色「${char.name}」`
+          : "角色"
+        : undefined;
+  const text = await grokOnce({
+    task: "field",
+    grokModelId,
+    extraSystem: fieldPolishHint({ field, instruction, current, charLabel }),
+    messages: [{ role: "user", content: roleSnapshot(chat) }],
+    max_tokens: 2000,
+    ...presetStyle(useApp.getState().settings, "field", chat),
+  });
+  return extractFieldText(text, field);
+}
+
+export async function summarizeMemory(
+  chat: Chat,
+  grokModelId: GrokModelId,
+  slice?: ChatMessage[],
+  previous?: string,
+) {
+  const keep = recentWindow();
+  const older = slice ?? chat.messages.slice(0, Math.max(0, chat.messages.length - keep));
+  if (older.length < 2) throw new Error("memory-skip");
+  const dialog = formatMemoryDialog(older);
+  if (!dialog.trim()) throw new Error("memory-skip");
+  const text = await grokOnce({
+    task: "memory",
+    grokModelId,
+    messages: [
+      {
+        role: "user",
+        content: `上一份备忘：\n${previous ?? chat.memory ?? "（无）"}\n\n需要收进去的对白：\n${dialog}`,
+      },
+    ],
+  });
+  const clipped = clipMemoryText(text);
+  if (!isPlausibleMemory(clipped)) throw new Error("memory-invalid");
+  return clipped;
+}
+
+export function nextFoldSlice(chat: Chat) {
+  const { W, I } = foldWindow();
+  return planFold(chat.messages.length, chat.memoryUntil || 0, chat.memoryFoldAt || 0, W, I);
+}
+
+function imageBrief(
+  chat: Chat,
+  opts: { shot?: string; residual?: string; last?: string },
+) {
+  const names = chat.characters.map((c) => c.name).filter(Boolean).join("、");
+  const roster = chat.characters
+    .map((c, i) => `${i + 1}. ${c.name || `角色${i + 1}`}`)
+    .join("\n");
+  const insert = chat.isMulti && chat.promptMode === "insert";
+  const format = insert
+    ? `输出 JSON（不要 markdown）：{"base":"人数场景镜头光线","chars":{${chat.characters.map((c) => `"${c.name || c.id}":"..."`).join(",")}},"absent":[]}
+chars 的键必须逐字用上面的角色名。不在镜头的角色放进 absent，不要写进 chars。没人离开则 absent 为 []。`
+    : chat.isMulti
+      ? "只输出英文 tag 一行，用 char1: ... char2: ... 区分。禁止 JSON，禁止 ENABLED。"
+      : "只输出英文 tag 一行。禁止 JSON。";
+  const shot = (opts.shot || "").trim();
+  const residual = (opts.residual || opts.last || "").trim();
+  return `角色：${names || "（未命名）"}
+外貌已由用户写好，不要重复（含发色瞳色体型种族整套衣服）。
+成人提示词加强：${chat.adultBoost ? "开" : "关"}
+多人：${chat.isMulti ? "是" : "否"}　插入模式：${chat.promptMode}
+${chat.isMulti ? `角色名单：\n${roster}` : ""}
+
+${IMAGE_SHOT_RULES}
+
+写法：先抽出本镜里最显眼的动作/部位，写成具体真 tag，不要收成 ass focus、naughty face 这种安全词。空格真 tag，禁止下划线。不要写画师质量词和外貌。
+用户已发生的动作优先于角色回里写软了的版本，必须写成已经发生，不要停在入口。
+成人开着：把画面写透、写够，不要保守。「不要硬塞」只挡住完全无关的内容。
+成人关着：对白里看得见的仍写，不额外堆没写到的特写；完全没有性/血腥则不加 nsfw。
+只输出标签，不要解释。
+
+本镜（姿势、镜头、正在做的事只认这段）：
+${shot || "（无）"}
+
+${chat.memory.trim() ? `长期记忆（只继承没被推翻的状态）：\n${chat.memory.trim()}\n` : ""}残留参考（不要继承已结束的动作/体位/朝向）：
+${residual || "（无）"}
+
+${format}`;
+}
+
+export function parseImageTagOutput(
+  text: string,
+  chat: Chat,
+): { base: string; chars: Record<string, string>; absent: string[] } {
+  const insert = chat.isMulti && chat.promptMode === "insert";
+  const roster = chat.imageParams.characters.length
+    ? chat.imageParams.characters.map((c) => ({ id: c.id, name: c.name || "" }))
+    : chat.characters.map((c) => ({ id: c.id, name: c.name || "" }));
+
+  const json = extractJsonObject(text);
+  if (json && (json.base != null || json.chars != null)) {
+    const rawChars: Record<string, string> = {};
+    const src = json.chars && typeof json.chars === "object" ? (json.chars as Record<string, unknown>) : {};
+    for (const [k, v] of Object.entries(src)) {
+      rawChars[k] = typeof v === "string" ? v : v == null ? "" : JSON.stringify(v);
+    }
+    const { mapped, leftover } = assignCharTags(rawChars, roster);
+    const base = sanitizeNaiTags([String(json.base || ""), leftover].filter(Boolean).join(", "));
+    const absent = resolveAbsentIds(json.absent, roster);
+    if (!insert) {
+      const extras = Object.values(mapped).filter(Boolean);
+      return { base: sanitizeNaiTags([base, ...extras].filter(Boolean).join(", ")), chars: {}, absent: [] };
+    }
+    return { base, chars: mapped, absent };
+  }
+
+  return { base: sanitizeNaiTags(text.replace(/\n/g, ", ")), chars: {}, absent: [] };
+}
+
+export async function writeImageTags(
+  chat: Chat,
+  lastText: string,
+  grokModelId: GrokModelId,
+  shotText?: string,
+) {
+  const extra = chat.adultBoost
+    ? "成人提示词加强：开。这是最高优先级之一。对白里的动作、部位、体液必须写成具体真 tag，写透（22–40 个），不要收成 ass focus / naughty face。无关内容仍不要加。只输出标签，不要解释。"
+    : "成人提示词加强：关。对白里看得见的仍写具体真 tag，不要额外堆没写到的器官特写。完全没有性/血腥的场面不要加 nsfw。只输出标签，不要解释。";
+  const text = await grokOnce({
+    task: "image",
+    grokModelId,
+    extraSystem: extra,
+    messages: [{ role: "user", content: imageBrief(chat, { shot: shotText, residual: lastText }) }],
+    max_tokens: 900,
+  });
+  return parseImageTagOutput(text, chat);
+}
+
+export function genPhaseLabel(status: GenImage["status"] | null | undefined, error?: string) {
+  if (status === "writing") return "写提示词中";
+  if (status === "uploading") return "上传中";
+  if (status === "generating") return "生图中";
+  if (status === "receiving") return "回传中";
+  if (status === "error") return error?.trim() || "生图失败";
+  return "";
+}
+
+export function afterPaint() {
+  return new Promise<void>((r) => requestAnimationFrame(() => r()));
+}
+
+export async function generateNai(opts: {
+  chat: Chat;
+  grokTail: string;
+  charTails?: Record<string, string>;
+  seed?: number;
+  apiKey: string;
+  baseUrl: string;
+  onStart?: () => void;
+  onReceiving?: () => void;
+}) {
+  const built = buildNaiPayload({
+    params: opts.chat.imageParams,
+    grokTail: opts.grokTail,
+    charTails: opts.charTails,
+    insertMode: opts.chat.promptMode,
+    seed: opts.seed,
+  });
+  opts.onStart?.();
+  const res = await fetch("/api/nai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "generate",
+      baseUrl: opts.baseUrl,
+      apiKey: opts.apiKey,
+      payload: { input: built.input, model: built.model, action: "generate", parameters: built.parameters },
+    }),
+  });
+  const data = (await res.json()) as { ok: boolean; image?: string; error?: string; status?: number };
+  if (!data.ok || !data.image) throw new Error(data.error || "生图失败");
+  opts.onReceiving?.();
+  await afterPaint();
+  const bin = atob(data.image);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  const blob = new Blob([arr], { type: "image/png" });
+  const blobId = await saveBlob(blob);
+  return { blobId, seed: built.seed, prompt: built.finalPrompt, blob };
+}
+
+export function parseGroup(text: string): { name: string; content: string; narrator?: boolean }[] {
+  const parts = text.split(/<<<(?:CHAR:([^>]+)|NARRATOR)>>>/g);
+  if (parts.length === 1) return [{ name: "", content: text.trim() }];
+  const out: { name: string; content: string; narrator?: boolean }[] = [];
+  // split with capturing groups: [pre, name1, body1, name2, body2...]
+  // Our regex has one group for CHAR name. NARATOR has no group so undefined.
+  const tokens = text.split(/(<<<CHAR:[^>]+>>>|<<<NARRATOR>>>)/);
+  let current: { name: string; narrator?: boolean } | null = null;
+  let buf = "";
+  const flush = () => {
+    if (current && buf.trim()) out.push({ ...current, content: buf.trim() });
+    buf = "";
+  };
+  for (const tok of tokens) {
+    const char = tok.match(/^<<<CHAR:([^>]+)>>>$/);
+    if (char) {
+      flush();
+      current = { name: char[1].trim() };
+      continue;
+    }
+    if (tok === "<<<NARRATOR>>>") {
+      flush();
+      current = { name: "旁白", narrator: true };
+      continue;
+    }
+    buf += tok;
+  }
+  flush();
+  return out.length ? out : [{ name: "", content: text.trim() }];
+}
+
+export function makeUserMessage(content: string): ChatMessage {
+  return { id: uid("m_"), role: "user", content, images: [], createdAt: Date.now() };
+}
+
+export function makeAssistantPlaceholder(chat: Chat): ChatMessage {
+  const names = chat.characters.map((c) => c.name).filter(Boolean);
+  return {
+    id: uid("m_"),
+    role: "assistant",
+    characterName: chat.isMulti && chat.multiMode === "together" ? names.join("、") : names[0],
+    characterId: chat.characters[0]?.id,
+    content: "",
+    images: [],
+    createdAt: Date.now(),
+  };
+}
+
+export function makeImageRecord(partial: Partial<GenImage> = {}): GenImage {
+  return {
+    id: uid("g_"),
+    prompt: "",
+    charTails: {},
+    negative: "",
+    seed: randomSeed(),
+    model: "nai-diffusion-4-5-full",
+    width: 832,
+    height: 1216,
+    steps: 28,
+    sampler: "k_euler_ancestral",
+    status: "uploading",
+    createdAt: Date.now(),
+    ...partial,
+  };
+}
+
+export { statusBarFor, historyMessages, groupFormatHint, chatContextBlock, splitChatPrompt };

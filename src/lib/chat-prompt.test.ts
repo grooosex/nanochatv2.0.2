@@ -1,0 +1,109 @@
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { splitChatPrompt, chatImageSystem, IMAGE_SYSTEM, IMAGE_SHOT_RULES, systemFor } from "./prompts.ts";
+import { emptyCharacter, defaultImageParams } from "./constants.ts";
+import type { Chat } from "./types.ts";
+
+function stub(partial: Partial<Chat> = {}): Chat {
+  return {
+    id: "c1",
+    folderId: null,
+    name: "青叶",
+    remark: "",
+    starred: false,
+    order: 0,
+    createdAt: 0,
+    updatedAt: 0,
+    grokModelId: "grok-4.6-medium",
+    isMulti: false,
+    multiMode: "together",
+    promptMode: "insert",
+    adultBoost: false,
+    canGen: true,
+    statusBarOn: false,
+    statusBar: "",
+    overview: "",
+    opening: "",
+    extras: [],
+    memory: "",
+    memoryUntil: 0,
+    memoryFoldAt: 0,
+    memorySnaps: [],
+    characters: [emptyCharacter(1)],
+    imageParams: defaultImageParams(),
+    messages: [],
+    scrollTop: 0,
+    ...partial,
+  };
+}
+
+describe("splitChatPrompt", () => {
+  it("leaves plain dialogue untouched", () => {
+    const s = splitChatPrompt("她坐在沙发上。\n状态栏:\n心情:安静");
+    assert.equal(s.started, false);
+    assert.equal(s.ended, false);
+    assert.equal(s.prompt, null);
+    assert.match(s.visible, /沙发/);
+  });
+
+  it("cuts tags out of the visible reply", () => {
+    const s = splitChatPrompt(
+      "她回头看你。\n状态栏:\n姿势:坐着\n<<<PROMPT>>>\nfrom behind, sitting, clothes lift\n<<<END>>>",
+    );
+    assert.equal(s.started, true);
+    assert.equal(s.ended, true);
+    assert.equal(s.visible, "她回头看你。\n状态栏:\n姿势:坐着");
+    assert.equal(s.prompt, "from behind, sitting, clothes lift");
+  });
+
+  it("treats an unclosed marker as tag-failed, dialogue already done", () => {
+    const s = splitChatPrompt("对白写完了\n<<<PROMPT>>>\nfrom behind, sitting");
+    assert.equal(s.started, true);
+    assert.equal(s.ended, false);
+    assert.equal(s.visible, "对白写完了");
+    assert.match(s.prompt || "", /from behind/);
+  });
+
+  it("is case-insensitive and keeps group markers in the dialogue", () => {
+    const s = splitChatPrompt(
+      "<<<CHAR:青叶>>>\n你好\n<<<NARRATOR>>>\n灯没开\n<<<prompt>>>\n1girl, sitting\n<<<end>>>",
+    );
+    assert.match(s.visible, /<<<CHAR:青叶>>>/);
+    assert.match(s.visible, /<<<NARRATOR>>>/);
+    assert.doesNotMatch(s.visible, /1girl/);
+    assert.equal(s.prompt, "1girl, sitting");
+  });
+});
+
+describe("chatImageSystem", () => {
+  it("keeps the full lexicon, 本镜 rules, and output order", () => {
+    const sys = chatImageSystem(stub());
+    assert.match(sys, /tentacles/);
+    assert.match(sys, /guro/);
+    assert.match(sys, /【本镜】/);
+    assert.match(sys, /<<<PROMPT>>>/);
+    assert.match(sys, /<<<END>>>/);
+    assert.ok(sys.includes(IMAGE_SYSTEM));
+    assert.ok(sys.includes(IMAGE_SHOT_RULES));
+  });
+
+  it("tells the model whether adult boost is on", () => {
+    assert.match(chatImageSystem(stub({ adultBoost: true })), /【成人提示词加强】开/);
+    assert.match(chatImageSystem(stub({ adultBoost: false })), /【成人提示词加强】关/);
+  });
+});
+
+describe("systemFor chat", () => {
+  it("appends the image block last", () => {
+    const img = "IMAGE_BLOCK_MARKER";
+    const sys = systemFor("chat", "【要求总览】写细", undefined, img);
+    assert.ok(sys.endsWith(img));
+    assert.match(sys, /要求总览/);
+  });
+
+  it("omits image rules when the switch is off", () => {
+    const sys = systemFor("chat", "【要求总览】写细");
+    assert.doesNotMatch(sys, /<<<PROMPT>>>/);
+    assert.doesNotMatch(sys, /tentacles/);
+  });
+});
