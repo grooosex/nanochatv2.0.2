@@ -1,3 +1,5 @@
+import { replyContextText, replyStoryText } from "./reply-markup.ts";
+
 export const OPENING_USER = "（开始场景，请角色先开口）";
 
 export type UserMarkup = {
@@ -92,8 +94,8 @@ export function recentSceneForImage(
     .slice(-n)
     .map((m) => {
       if (m.role === "user") return formatUserForImage(m.content);
-      if (m.role === "narrator") return m.content ? `旁白：${m.content}` : "";
-      return `${m.characterName || "角色"}：${m.content}`;
+      if (m.role === "narrator") return m.content ? `旁白：${replyContextText(m.content)}` : "";
+      return `${m.characterName || "角色"}：${replyContextText(m.content)}`;
     })
     .filter(Boolean)
     .join("\n");
@@ -109,7 +111,7 @@ export function shotAndResidual(
   const msg = idx >= 0 ? messages[idx] : undefined;
   const before = idx >= 0 ? messages.slice(0, idx) : messages;
   return {
-    shot: (shotOverride ?? msg?.content ?? "").trim(),
+    shot: (shotOverride ?? (msg ? replyStoryText(msg.content) : "")).trim(),
     residual: recentSceneForImage(before, 4),
   };
 }

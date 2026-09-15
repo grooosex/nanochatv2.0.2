@@ -13,6 +13,13 @@ import { listedChats, useApp } from "@/lib/store";
 import { insertTag, loadTags, suggestTags, type Tag } from "@/lib/tags";
 import { naiFamily } from "@/lib/nai";
 import { cachedUrl } from "@/lib/idb";
+import { replyStoryText } from "@/lib/reply-markup";
+import {
+  FOLLOW_IMAGE_AI,
+  applyImageAiPick,
+  imageAiLabel,
+  imagePickerModels,
+} from "@/lib/image-ai";
 import type { AppearancePreset, Chat, CharacterPrompt, ImageParams, NaiModelId, NoiseSchedule, SamplerId, UcPreset } from "@/lib/types";
 import { cn, randomSeed, uid } from "@/lib/utils";
 import { LibraryDrawer } from "./LibraryDrawer";
@@ -144,8 +151,13 @@ export function ParamsPane({ chat, mode = "chat" }: { chat: Chat; mode?: "chat" 
     <div className={mode === "pure" ? "mx-auto max-w-lg px-4 pb-10 pt-1" : "mx-auto h-full max-w-lg overflow-y-auto px-4 pb-24 pt-3 scroll-thin"}>
       {mode === "chat" && (
         <>
-          <div className="mt-1 text-[11px] tracking-[0.16em] text-muted">CHAT IMAGE</div>
-          <h1 className="font-serif text-2xl">聊天配图参数</h1>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="mt-1 text-[11px] tracking-[0.16em] text-muted">CHAT IMAGE</div>
+              <h1 className="font-serif text-2xl">聊天配图参数</h1>
+            </div>
+            <ImageAiPicker chat={chat} />
+          </div>
           <div className="mb-3 mt-1 text-[12px] text-muted">
             {chat.isDraft
               ? "正在给这个新角色配图。改完可以切回「聊天」继续写人设，开始后她会先开口。"
@@ -561,8 +573,47 @@ function AppearSelect({ className, onPick }: { className?: string; onPick: (a: A
   );
 }
 
+function ImageAiPicker({ chat }: { chat: Chat }) {
+  const source = useApp((s) => s.settings.chatSource);
+  const llmModel = useApp((s) => s.settings.llmModel);
+  const starred = useApp((s) => s.settings.llmStarred);
+  const available = useApp((s) => s.settings.llmModels);
+  const ids = imagePickerModels({
+    chatSource: source,
+    llmStarred: starred,
+    llmModels: available,
+    llmModel,
+    imageModelId: chat.imageModelId,
+    imageModelPin: chat.imageModelPin,
+  });
+  const value = chat.imageModelId || FOLLOW_IMAGE_AI;
+  return (
+    <div className="shrink-0 pt-1 text-right">
+      <div className="text-[11px] tracking-[0.16em] text-muted">配图 AI</div>
+      <div className="mt-1 inline-flex rounded-full border border-line bg-card">
+        <ExpandSelect
+          value={ids.includes(value) ? value : FOLLOW_IMAGE_AI}
+          options={ids.map((id) => ({ id, label: imageAiLabel(id), short: imageAiLabel(id) }))}
+          onChange={(id) => useApp.getState().patchChat(chat.id, applyImageAiPick(chat, id))}
+          align="left"
+          menu="end"
+        />
+      </div>
+      {chat.imageModelId ? (
+        <p className="mt-1 max-w-[11rem] text-[11px] leading-4 text-muted">
+          对白用顶栏，提示词用 {imageAiLabel(chat.imageModelId)}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function chatSnippet(c: Chat) {
-  const last = c.remark || [...c.messages].reverse().find((m) => m.content)?.content || c.opening;
+  const lastMsg = [...c.messages].reverse().find((m) => m.content);
+  const last =
+    c.remark ||
+    (lastMsg && lastMsg.role !== "user" ? replyStoryText(lastMsg.content) || lastMsg.content : lastMsg?.content) ||
+    c.opening;
   return (last || "新的对话").replace(/\s+/g, " ");
 }
 

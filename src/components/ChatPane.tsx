@@ -16,9 +16,10 @@ import { cachedUrl, imageUrl } from "@/lib/idb";
 import { modelLabel, samplerLabel } from "@/lib/nai";
 import { extractGrokTail } from "@/lib/nai-tags";
 import { useApp } from "@/lib/store";
-import { downloadBlob } from "@/lib/utils";
+import { downloadBlob, cn } from "@/lib/utils";
 import { genPhaseLabel, stripStatus } from "@/lib/engine";
 import { splitDialogue, stripSpeakerPrefix } from "@/lib/rp-text";
+import { parseReplyMarkup, type ReplyFold } from "@/lib/reply-markup";
 import type { Chat, ChatMessage, GenImage, ImageGenSource, MultiMode, PromptInsertMode } from "@/lib/types";
 import { attachImage, branchFrom, editMessage, regenMessage, sendUser } from "./chat-actions";
 import { ChatModelSelect } from "./ModelSelect";
@@ -30,6 +31,7 @@ export function ChatPane({ chat }: { chat: Chat }) {
   const chatImage = useApp((s) => s.settings.chatImage !== false);
   const memoryHint = useApp((s) => s.ui.memoryHint);
   const scroller = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [draft, setDraft] = useState("");
 
@@ -102,7 +104,15 @@ export function ChatPane({ chat }: { chat: Chat }) {
           </div>
         )}
         {chat.messages.map((m) => (
-          <Bubble key={m.id} chat={chat} msg={m} />
+          <Bubble
+            key={m.id}
+            chat={chat}
+            msg={m}
+            onUseOption={(t) => {
+              setDraft(t);
+              requestAnimationFrame(() => inputRef.current?.focus());
+            }}
+          />
         ))}
       </div>
 
@@ -174,6 +184,7 @@ export function ChatPane({ chat }: { chat: Chat }) {
             {atBottom ? <ChevronDown className="size-5 rotate-180" /> : <ArrowDown className="size-5" />}
           </button>
           <textarea
+            ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -208,7 +219,15 @@ function cnToggle(on: boolean) {
   return on ? "px-1 font-medium text-ink" : "px-1 text-muted";
 }
 
-function Bubble({ chat, msg }: { chat: Chat; msg: ChatMessage }) {
+function Bubble({
+  chat,
+  msg,
+  onUseOption,
+}: {
+  chat: Chat;
+  msg: ChatMessage;
+  onUseOption?: (text: string) => void;
+}) {
   const [edit, setEdit] = useState(false);
   const [text, setText] = useState(msg.content);
   const url = cachedUrl(chat.avatarBlobId);
@@ -262,7 +281,7 @@ function Bubble({ chat, msg }: { chat: Chat; msg: ChatMessage }) {
             </span>
           </div>
         ) : (
-          <RpBody text={msg.content} names={names} />
+          <ReplyView text={msg.content} names={names} onUseOption={onUseOption} />
         )}
         <div className="mt-2 flex flex-wrap gap-1.5">
           <Mini onClick={() => void regenMessage(chat.id, msg.id)} icon={<RefreshCw className="size-3" />} label="重新生成" />
@@ -282,6 +301,64 @@ function Bubble({ chat, msg }: { chat: Chat; msg: ChatMessage }) {
         )}
         {msg.images.length > 0 && <ImageBlock chat={chat} msg={msg} />}
       </div>
+    </div>
+  );
+}
+
+function ReplyView({
+  text,
+  names,
+  onUseOption,
+}: {
+  text: string;
+  names: (string | undefined)[];
+  onUseOption?: (text: string) => void;
+}) {
+  const parsed = parseReplyMarkup(text);
+  const think = parsed.folds.filter((f) => f.kind === "think");
+  const notes = parsed.folds.filter((f) => f.kind === "note");
+  return (
+    <>
+      {think.map((f, i) => (
+        <ReplyFoldRow key={`think-${i}-${f.title}`} fold={f} />
+      ))}
+      {parsed.body ? <RpBody text={parsed.body} names={names} /> : null}
+      {notes.map((f, i) => (
+        <ReplyFoldRow key={`note-${i}-${f.title}`} fold={f} />
+      ))}
+      {parsed.options.length > 0 ? (
+        <div className="mt-3 space-y-1.5">
+          {parsed.options.map((opt, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onUseOption?.(opt)}
+              className="block w-full rounded-[16px] border border-line bg-card px-3 py-2 text-left text-[13px] leading-snug text-ink"
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function ReplyFoldRow({ fold }: { fold: ReplyFold }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={fold.kind === "think" ? "mb-2" : "mt-2"}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 text-[12px] text-muted"
+      >
+        <ChevronDown className={cn("size-3.5 shrink-0 transition", open ? "" : "-rotate-90")} />
+        {fold.title}
+      </button>
+      {open && fold.body ? (
+        <div className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-narrate">{fold.body}</div>
+      ) : null}
     </div>
   );
 }

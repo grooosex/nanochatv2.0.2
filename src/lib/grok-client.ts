@@ -13,9 +13,17 @@ async function readJsonError(res: Response, fallback: string) {
 export async function grokOnce(body: Record<string, unknown>) {
   const s = useApp.getState().settings;
   const presetOn = Boolean(s.stActiveId);
-  if (s.chatSource === "api") {
-    if (!s.llmConnected || !s.llmKey) throw new Error("还没连接对话 API");
-    if (!s.llmModel) throw new Error("还没选择模型");
+  const viaBody = body.via;
+  const modelBody = typeof body.model === "string" ? body.model : "";
+  const rest = { ...body };
+  delete rest.via;
+  delete rest.model;
+  const via = viaBody === "api" || viaBody === "grok" ? viaBody : s.chatSource;
+
+  if (via === "api") {
+    const model = modelBody || s.llmModel;
+    if (!s.llmKey) throw new Error("还没连接对话 API");
+    if (!model) throw new Error("还没选择模型");
     const res = await fetch("/api/llm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -23,11 +31,11 @@ export async function grokOnce(body: Record<string, unknown>) {
         action: "chat",
         baseUrl: s.llmBase,
         apiKey: s.llmKey,
-        model: s.llmModel,
+        model,
         params: s.llmParams,
-        ...body,
+        ...rest,
         stream: false,
-        max_tokens: (body.max_tokens as number | undefined) ?? s.llmParams.maxTokens,
+        max_tokens: (rest.max_tokens as number | undefined) ?? s.llmParams.maxTokens,
       }),
     });
     const data = (await res.json()) as { ok: boolean; text?: string; error?: string };
@@ -39,7 +47,7 @@ export async function grokOnce(body: Record<string, unknown>) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      ...body,
+      ...rest,
       stream: false,
       params: presetOn ? s.llmParams : undefined,
     }),

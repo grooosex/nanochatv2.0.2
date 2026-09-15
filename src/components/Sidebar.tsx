@@ -18,6 +18,7 @@ import {
 import { cn, autoScrollNearEdge, indexFromY, moveId } from "@/lib/utils";
 import { listedChats, useApp } from "@/lib/store";
 import { cachedUrl } from "@/lib/idb";
+import { replyStoryText } from "@/lib/reply-markup";
 import { Avatar, IconBtn } from "./ui-kit";
 
 const HOLD_MS = 420;
@@ -513,7 +514,11 @@ function ChatRow({
   const { held, ...holdH } = hold;
   if (!chat) return null;
   const selected = ui.selected.includes(id);
-  const last = chat.remark || [...chat.messages].reverse().find((m) => m.content)?.content || chat.opening;
+  const lastMsg = [...chat.messages].reverse().find((m) => m.content);
+  const last =
+    chat.remark ||
+    (lastMsg && lastMsg.role !== "user" ? replyStoryText(lastMsg.content) || lastMsg.content : lastMsg?.content) ||
+    chat.opening;
   const url = cachedUrl(chat.avatarBlobId);
   const menu = ui.menuId === id;
 

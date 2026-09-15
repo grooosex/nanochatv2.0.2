@@ -83,6 +83,7 @@ interface State {
   setUI: (p: Partial<UI>) => void;
   setSettings: (p: Partial<Settings>) => void;
   setGrok: (id: GrokModelId) => void;
+  clearImageAi: () => void;
   setTab: (t: TabId) => void;
   current: () => Chat | undefined;
   patchChat: (id: string, p: Partial<Chat> | ((c: Chat) => Chat)) => void;
@@ -177,6 +178,8 @@ export const useApp = create<State>((set, get) => ({
     const live = data.chats.filter((c) => !c.isDraft).map((c) => ({
       ...normalizeChatMemory(c),
       grokModelId: migrateGrokId(c.grokModelId),
+      imageModelId: c.imageModelId || null,
+      imageModelPin: c.imageModelPin || null,
     }));
     const settings = {
       ...data.settings,
@@ -219,6 +222,17 @@ export const useApp = create<State>((set, get) => ({
     get().setSettings({ grokModelId: id });
     const cur = get().current();
     if (cur) get().patchChat(cur.id, { grokModelId: id });
+  },
+
+  clearImageAi: () => {
+    set((s) => ({
+      chats: s.chats.map((c) => {
+        if (!c.imageModelId && !c.imageModelPin) return c;
+        const next = { ...c, imageModelId: null, imageModelPin: null, updatedAt: Date.now() };
+        persistChat(next);
+        return next;
+      }),
+    }));
   },
 
   current: () => get().chats.find((c) => c.id === get().currentId),

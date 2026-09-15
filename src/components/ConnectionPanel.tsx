@@ -4,6 +4,8 @@ import { Check, ChevronDown, Download, FileUp, Settings, Star, Trash2, Upload, X
 import { DEFAULT_LLM_PARAMS, DEFAULT_NAI_BASE, shortModelLabel } from "@/lib/constants";
 import { exportArchive, importArchive } from "@/lib/archive";
 import { fetchLlmModels } from "@/lib/grok-client";
+import { applyLlmPick, pruneStarred, snapshotLlmAccount } from "@/lib/llm-models";
+import { llmIdentity } from "@/lib/image-ai";
 import { useApp } from "@/lib/store";
 import { cn, uid, uniqueNumberedName } from "@/lib/utils";
 import type { LlmAccount, StPreset } from "@/lib/types";
@@ -295,9 +297,11 @@ function ApiSettingsSheet({ onClose }: { onClose: () => void }) {
       const list = await fetchLlmModels(u, k);
       const live = useApp.getState().settings;
       const preferred = override?.model || live.llmModel;
-      const nextModel = preferred && list.includes(preferred) ? preferred : list[0] || preferred;
+      const nextModel = preferred || list[0] || "";
       const keepStars = override?.starred ?? live.llmStarred;
-      const starred = [...new Set(keepStars)];
+      const starred = list.length ? pruneStarred(keepStars, list, nextModel) : [...new Set(keepStars)];
+      const nextIdentity = llmIdentity(u, k);
+      const prevIdentity = live.llmIdentity || (live.llmConnected ? llmIdentity(live.llmBase, live.llmKey) : "");
       useApp.getState().setSettings({
         llmBase: u,
         llmKey: k,
@@ -306,8 +310,10 @@ function ApiSettingsSheet({ onClose }: { onClose: () => void }) {
         llmModel: nextModel,
         llmStarred: starred,
         chatSource: "api",
-        llmAccounts: snapshotAccount(live.llmAccounts ?? [], u, k, starred, nextModel),
+        llmAccounts: snapshotLlmAccount(live.llmAccounts ?? [], u, k, starred, nextModel),
+        llmIdentity: nextIdentity,
       });
+      if (prevIdentity && prevIdentity !== nextIdentity) useApp.getState().clearImageAi();
       useApp.getState().toast(
         override?.toast ?? (list.length ? `已连接 · ${list.length} 个模型` : "已连接，请手填模型名"),
       );
@@ -399,7 +405,7 @@ function ApiSettingsSheet({ onClose }: { onClose: () => void }) {
           const s = useApp.getState().settings;
           if (s.llmBase || s.llmKey) {
             useApp.getState().setSettings({
-              llmAccounts: snapshotAccount(s.llmAccounts ?? [], s.llmBase, s.llmKey, s.llmStarred, s.llmModel),
+              llmAccounts: snapshotLlmAccount(s.llmAccounts ?? [], s.llmBase, s.llmKey, s.llmStarred, s.llmModel),
             });
           }
           setUrl(a.base);
@@ -435,18 +441,21 @@ function ApiSettingsSheet({ onClose }: { onClose: () => void }) {
         starred={settings.llmStarred}
         connected={settings.llmConnected}
         onPick={(id) => {
-          useApp.getState().setSettings({
-            llmModel: id,
-            chatSource: "api",
-            llmAccounts: snapshotAccount(settings.llmAccounts ?? [], settings.llmBase, settings.llmKey, settings.llmStarred, id),
-          });
+          useApp.getState().setSettings(applyLlmPick(settings, id));
         }}
         onStar={(id) => {
           const on = settings.llmStarred.includes(id);
-          const llmStarred = on ? settings.llmStarred.filter((x) => x !== id) : [...settings.llmStarred, id];
+          const next = on ? settings.llmStarred.filter((x) => x !== id) : [...settings.llmStarred, id];
+          const llmStarred = pruneStarred(next, settings.llmModels, settings.llmModel);
           useApp.getState().setSettings({
             llmStarred,
-            llmAccounts: snapshotAccount(settings.llmAccounts ?? [], settings.llmBase, settings.llmKey, llmStarred, settings.llmModel),
+            llmAccounts: snapshotLlmAccount(
+              settings.llmAccounts ?? [],
+              settings.llmBase,
+              settings.llmKey,
+              llmStarred,
+              settings.llmModel,
+            ),
           });
         }}
       />
@@ -474,7 +483,8 @@ function ApiSettingsSheet({ onClose }: { onClose: () => void }) {
         </div>
       )}
       <p className="mt-2 text-[12px] text-muted">
-        当前：{settings.llmModel ? shortModelLabel(settings.llmModel) : "未选"} · 常用 {settings.llmStarred.length}
+        当前：{settings.llmModel ? shortModelLabel(settings.llmModel) : "未选"} · 常用{" "}
+        {pruneStarred(settings.llmStarred, settings.llmModels, settings.llmModel).length}
       </p>
 
       <ChatPresetPicker />
@@ -782,20 +792,6 @@ function ChatPresetPicker() {
           )}
       </div>
     </div>
-  );
-}
-
-function snapshotAccount(
-  accounts: LlmAccount[],
-  base: string,
-  key: string,
-  starred: string[],
-  model: string,
-): LlmAccount[] {
-  const b = base.trim();
-  if (!b && !key) return accounts;
-  return accounts.map((a) =>
-    a.base.trim() === b && a.key === key ? { ...a, starred: [...starred], model } : a,
   );
 }
 

@@ -161,6 +161,10 @@ export interface Chat {
   messages: ChatMessage[];
   avatarBlobId?: string;
   scrollTop: number;
+  /** null/unset = 与聊天一致. Independent of the top-bar chat model. */
+  imageModelId?: string | null;
+  /** Last explicit API pick for 配图 AI; kept at the end of the list on Grok. */
+  imageModelPin?: string | null;
 }
 
 export interface Folder {
@@ -267,6 +271,8 @@ export interface Settings {
   llmStarred: string[];
   llmAccounts: LlmAccount[];
   llmParams: LlmParams;
+  /** Last successfully connected API account; used to reset 配图 AI on account switch. */
+  llmIdentity?: string;
   stPresets: StPreset[];
   stActiveId: string | null;
   stParamSnapshot: LlmParams | null;

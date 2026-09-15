@@ -8,7 +8,7 @@ import { useApp } from "@/lib/store";
 import { syncCharsFromRole } from "@/lib/nai";
 import type { Chat, ExtraField } from "@/lib/types";
 import { uid } from "@/lib/utils";
-import { applySnaps, emptyMemory, foldCoveredEnd } from "@/lib/chat-memory";
+import { applySnaps, emptyMemory, foldCoveredEnd, memoryTurnStats } from "@/lib/chat-memory";
 import { invalidateMemory } from "./chat-actions";
 import { ChatModelSelect } from "./ModelSelect";
 import { Card, ExpandSelect, FieldLabel, GhostBtn, PrimaryBtn, Switch, TextArea, TextInput } from "./ui-kit";
@@ -33,6 +33,7 @@ export function RoleEditor({ chat, mode }: { chat: Chat; mode: "create" | "edit"
   const polishJob = useApp((s) => s.ui.polishJob);
   const busyRef = useRef(false);
   const locked = !!busy;
+  const memTurns = memoryTurnStats(chat.messages.length, chat.memoryUntil);
   const fieldBusyLabel =
     busy?.kind === "field" ? FIELD_LABELS[busy.key] || busy.key : "";
 
@@ -355,7 +356,14 @@ export function RoleEditor({ chat, mode }: { chat: Chat; mode: "create" | "edit"
 
       {mode === "edit" && (
         <Card className="mb-3">
-          <FieldLabel hint="聊久了会把更早的剧情压成备忘，下一轮当事实用。聊天里看不见。可改、可重总结、可清空。">
+          <FieldLabel
+            sub={
+              <span className="text-[11px] text-muted">
+                （已对话 <span className="text-good">{memTurns.spoken}</span> 轮，已总结到第 <span className="text-good">{memTurns.folded}</span> 轮）
+              </span>
+            }
+            hint="聊久了会把更早的剧情压成备忘，下一轮当事实用。聊天里看不见。可改、可重总结、可清空。"
+          >
             长期记忆
           </FieldLabel>
           <TextArea
@@ -378,13 +386,13 @@ export function RoleEditor({ chat, mode }: { chat: Chat; mode: "create" | "edit"
           />
           <div className="mt-2 flex gap-2">
             <GhostBtn
-              className="h-10 text-[13px]"
+              className="h-10 w-auto min-w-0 flex-1 whitespace-nowrap px-3 text-[13px]"
               onClick={() => useApp.getState().toast("已保存")}
             >
               保存
             </GhostBtn>
             <GhostBtn
-              className="h-10 text-[13px]"
+              className="h-10 w-auto min-w-0 flex-1 whitespace-nowrap px-3 text-[13px]"
               onClick={async () => {
                 if (locked) return;
                 setBusy({ kind: "mem" });
@@ -414,7 +422,7 @@ export function RoleEditor({ chat, mode }: { chat: Chat; mode: "create" | "edit"
               {busy?.kind === "mem" ? "总结中…" : "重新总结"}
             </GhostBtn>
             <GhostBtn
-              className="h-10 text-[13px]"
+              className="h-10 w-auto min-w-0 flex-1 whitespace-nowrap px-3 text-[13px]"
               onClick={() => {
                 invalidateMemory(chat.id);
                 patch(emptyMemory());

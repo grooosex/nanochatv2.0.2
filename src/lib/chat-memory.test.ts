@@ -2,9 +2,11 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   applySnaps,
+  firstFoldAt,
   foldCoveredEnd,
   foldIntervalMessages,
   isPlausibleMemory,
+  memoryTurnStats,
   planFold,
   rewindSnaps,
 } from "./chat-memory.ts";
@@ -21,18 +23,20 @@ describe("foldIntervalMessages", () => {
 describe("planFold", () => {
   const W = 32;
   const I = 20;
-  it("does nothing before the window fills", () => {
-    assert.equal(planFold(30, 0, 0, W, I), null);
+  it("does nothing until one pair before the window fills", () => {
+    assert.equal(firstFoldAt(W, I), 30);
+    assert.equal(planFold(29, 0, 0, W, I), null);
   });
-  it("first fold at 16 turns compresses 1–10", () => {
+  it("first fold one pair early compresses 1–10", () => {
+    assert.deepEqual(planFold(30, 0, 0, W, I), { start: 0, end: 20 });
     assert.deepEqual(planFold(32, 0, 0, W, I), { start: 0, end: 20 });
   });
   it("waits a full interval after the first fold", () => {
-    assert.equal(planFold(51, 20, 32, W, I), null);
-    assert.deepEqual(planFold(52, 20, 32, W, I), { start: 20, end: 40 });
+    assert.equal(planFold(49, 20, 30, W, I), null);
+    assert.deepEqual(planFold(50, 20, 30, W, I), { start: 20, end: 40 });
   });
-  it("third fold at turn 36", () => {
-    assert.deepEqual(planFold(72, 40, 52, W, I), { start: 40, end: 60 });
+  it("third fold ten turns later", () => {
+    assert.deepEqual(planFold(70, 40, 50, W, I), { start: 40, end: 60 });
   });
   it("manual summarize does not immediately refold", () => {
     assert.equal(planFold(50, 18, 50, W, I), null);
@@ -47,12 +51,22 @@ describe("planFold", () => {
 describe("foldCoveredEnd", () => {
   const W = 32;
   const I = 20;
-  it("matches the 16 / 26 / 36 schedule", () => {
-    assert.equal(foldCoveredEnd(30, W, I), 0);
-    assert.equal(foldCoveredEnd(32, W, I), 20);
-    assert.equal(foldCoveredEnd(51, W, I), 20);
-    assert.equal(foldCoveredEnd(52, W, I), 40);
-    assert.equal(foldCoveredEnd(72, W, I), 60);
+  it("matches the 15 / 25 / 35 schedule", () => {
+    assert.equal(foldCoveredEnd(29, W, I), 0);
+    assert.equal(foldCoveredEnd(30, W, I), 20);
+    assert.equal(foldCoveredEnd(49, W, I), 20);
+    assert.equal(foldCoveredEnd(50, W, I), 40);
+    assert.equal(foldCoveredEnd(70, W, I), 60);
+  });
+});
+
+describe("memoryTurnStats", () => {
+  it("counts pairs and drops the leftover opening", () => {
+    assert.deepEqual(memoryTurnStats(0, 0), { spoken: 0, folded: 0 });
+    assert.deepEqual(memoryTurnStats(1, 0), { spoken: 0, folded: 0 });
+    assert.deepEqual(memoryTurnStats(31, 20), { spoken: 15, folded: 10 });
+    assert.deepEqual(memoryTurnStats(32, 20), { spoken: 16, folded: 10 });
+    assert.deepEqual(memoryTurnStats(33, 20), { spoken: 16, folded: 10 });
   });
 });
 

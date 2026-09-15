@@ -23,6 +23,7 @@ import { shotAndResidual } from "@/lib/user-markup";
 import { presetStyle } from "@/lib/st-preset";
 import { applySnaps, pushSnap, rewindSnaps } from "@/lib/chat-memory";
 import { chatImageSystem } from "@/lib/prompts";
+import { resolveImageWrite } from "@/lib/image-ai";
 import type { Chat, ChatMessage, GenImage, ImageGenSource } from "@/lib/types";
 import { randomSeed, uid } from "@/lib/utils";
 
@@ -175,6 +176,7 @@ async function runReply(id: string, _userText: string | null, opening: boolean) 
   if (!c0) return;
   const grokModelId = useApp.getState().settings.grokModelId;
   const wantImage = imageOn();
+  const imageInChat = wantImage && !resolveImageWrite(c0.imageModelId).split;
   const ctrl = new AbortController();
   aborts.set(id, ctrl);
   busy.add(id);
@@ -183,7 +185,7 @@ async function runReply(id: string, _userText: string | null, opening: boolean) 
 
   const extra = [
     chatContextBlock(c0),
-    groupFormatHint(c0, wantImage),
+    groupFormatHint(c0, imageInChat),
     opening ? "这是开场。根据开场场景，以角色口吻先说第一句。不要以用户身份说话。" : "",
   ]
     .filter(Boolean)
@@ -204,14 +206,14 @@ async function runReply(id: string, _userText: string | null, opening: boolean) 
         task: "chat",
         grokModelId,
         extraSystem: extra,
-        imageSystem: wantImage ? chatImageSystem(c0) : undefined,
+        imageSystem: imageInChat ? chatImageSystem(c0) : undefined,
         messages: msgs,
         ...presetStyle(useApp.getState().settings, "chat", c0),
       },
       (text) => {
         const split = splitChatPrompt(text);
         applyStream(id, placeholder, split.visible, c0);
-        if (wantImage && split.started && !promptStarted) {
+        if (imageInChat && split.started && !promptStarted) {
           promptStarted = true;
           ensureWritingImage(id, placeholder);
         }
@@ -248,16 +250,21 @@ async function runReply(id: string, _userText: string | null, opening: boolean) 
   const visibleOk = Boolean(split.visible.trim() || assist?.content.trim());
 
   if (wantImage && assist && visibleOk) {
-    if (promptStarted && !split.started && raw) {
-      const again = splitChatPrompt(raw);
-      if (again.started) Object.assign(split, again);
-    }
-    const parsed = split.prompt ? parseImageTagOutput(split.prompt, latest) : null;
-    const hasTags = Boolean(parsed && (parsed.base || Object.keys(parsed.chars).length));
-    if (hasTags && parsed) {
-      void attachImage(id, assist.id, "auto", undefined, undefined, parsed);
-    } else if (!streamFailed || promptStarted) {
+    const splitWrite = resolveImageWrite(latest.imageModelId).split;
+    if (splitWrite) {
       void attachImage(id, assist.id, "rewrite", undefined, undefined, undefined, split.visible);
+    } else {
+      if (promptStarted && !split.started && raw) {
+        const again = splitChatPrompt(raw);
+        if (again.started) Object.assign(split, again);
+      }
+      const parsed = split.prompt ? parseImageTagOutput(split.prompt, latest) : null;
+      const hasTags = Boolean(parsed && (parsed.base || Object.keys(parsed.chars).length));
+      if (hasTags && parsed) {
+        void attachImage(id, assist.id, "auto", undefined, undefined, parsed);
+      } else if (!streamFailed || promptStarted) {
+        void attachImage(id, assist.id, "rewrite", undefined, undefined, undefined, split.visible);
+      }
     }
   }
 

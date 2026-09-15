@@ -168,6 +168,16 @@ var ChevronLeft = createLucideIcon("chevron-left", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var ChevronRight = createLucideIcon("chevron-right", [["path", {
+	d: "m9 18 6-6-6-6",
+	key: "mthhwq"
+}]]);
+/**
+* @license lucide-react v0.510.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var ChevronUp = createLucideIcon("chevron-up", [["path", {
 	d: "m18 15-6-6-6 6",
 	key: "153udz"
@@ -252,6 +262,30 @@ var Ellipsis = createLucideIcon("ellipsis", [
 		cy: "12",
 		r: "1",
 		key: "1pcz8c"
+	}]
+]);
+/**
+* @license lucide-react v0.510.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var FileUp = createLucideIcon("file-up", [
+	["path", {
+		d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z",
+		key: "1rqfz7"
+	}],
+	["path", {
+		d: "M14 2v4a2 2 0 0 0 2 2h4",
+		key: "tnqrlb"
+	}],
+	["path", {
+		d: "M12 12v6",
+		key: "3ahymv"
+	}],
+	["path", {
+		d: "m15 15-3-3-3 3",
+		key: "15xj92"
 	}]
 ]);
 /**
@@ -778,4 +812,4 @@ var X = createLucideIcon("x", [["path", {
 	key: "d8bk6v"
 }]]);
 //#endregion
-export { Check as A, Ellipsis as C, ChevronUp as D, Clock as E, ArrowUp as M, ArrowDown as N, ChevronLeft as O, AlignJustify as P, FolderInput as S, Copy as T, Lock as _, Trash2 as a, Folder as b, Sparkles as c, ScanSearch as d, RefreshCw as f, Menu as g, Moon as h, TriangleAlert as i, Bookmark as j, ChevronDown as k, SlidersHorizontal as l, Pencil as m, WandSparkles as n, Sun as o, Plus as p, Upload as r, Star as s, X as t, Settings as u, LoaderCircle as v, Download as w, FolderPlus as x, GitBranch as y };
+export { ChevronLeft as A, FileUp as C, Clock as D, Copy as E, ArrowDown as F, AlignJustify as I, Check as M, Bookmark as N, ChevronUp as O, ArrowUp as P, FolderInput as S, Download as T, Lock as _, Trash2 as a, Folder as b, Sparkles as c, ScanSearch as d, RefreshCw as f, Menu as g, Moon as h, TriangleAlert as i, ChevronDown as j, ChevronRight as k, SlidersHorizontal as l, Pencil as m, WandSparkles as n, Sun as o, Plus as p, Upload as r, Star as s, X as t, Settings as u, LoaderCircle as v, Ellipsis as w, FolderPlus as x, GitBranch as y };

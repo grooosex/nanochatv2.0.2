@@ -11,6 +11,7 @@ import type {
 } from "./types";
 import { DEFAULT_GROK, DEFAULT_LLM_PARAMS, DEFAULT_NAI_BASE, migrateGrokId, mergeLlmParams } from "./constants";
 import { parseStPresets } from "./st-preset";
+import { llmIdentity } from "./image-ai";
 
 export const defaultSettings = (): Settings => ({
   grokModelId: DEFAULT_GROK,
@@ -23,6 +24,7 @@ export const defaultSettings = (): Settings => ({
   llmStarred: [],
   llmAccounts: [],
   llmParams: { ...DEFAULT_LLM_PARAMS },
+  llmIdentity: "",
   stPresets: [],
   stActiveId: null,
   stParamSnapshot: null,
@@ -107,6 +109,12 @@ export async function loadAll() {
     stParamSnapshot: stActiveId && raw?.stParamSnapshot ? mergeLlmParams(raw.stParamSnapshot) : null,
     chatSource: raw?.chatSource === "api" && raw?.llmConnected ? ("api" as const) : ("grok" as const),
     chatImage: raw?.chatImage !== false,
+    llmIdentity:
+      typeof raw?.llmIdentity === "string" && raw.llmIdentity
+        ? raw.llmIdentity
+        : raw?.llmConnected && raw?.llmBase && raw?.llmKey
+          ? llmIdentity(String(raw.llmBase), String(raw.llmKey))
+          : "",
   };
   return { chats, folders, cards, appearances, favorites, history, settings };
 }

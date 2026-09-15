@@ -1,4 +1,5 @@
 import type { Chat, ChatMessage, MemorySnap } from "./types";
+import { replyContextText } from "./reply-markup.ts";
 
 export const MEMORY_CHAR_CAP = 3800;
 export const MEMORY_TARGET = "900–1400 字";
@@ -21,6 +22,11 @@ export function foldIntervalMessages(contextTurns: number): number {
   return Math.max(4, turns - 6) * 2;
 }
 
+/** First fold fires one pair before the raw window is full. */
+export function firstFoldAt(windowMsgs: number, intervalMsgs: number): number {
+  return Math.max(intervalMsgs, windowMsgs - 2);
+}
+
 /** Next chunk to compress, or null if not yet. */
 export function planFold(
   n: number,
@@ -29,9 +35,9 @@ export function planFold(
   windowMsgs: number,
   intervalMsgs: number,
 ): { start: number; end: number } | null {
-  const W = windowMsgs;
   const I = intervalMsgs;
-  if (n < W || I < 2) return null;
+  const firstAt = firstFoldAt(windowMsgs, I);
+  if (n < firstAt || I < 2) return null;
   if (foldAt > 0 && n < foldAt + I) return null;
   if (covered <= 0) return { start: 0, end: Math.min(I, n) };
   const end = covered + I;
@@ -41,9 +47,18 @@ export function planFold(
 
 /** How far the current line should be covered if every fold had succeeded. */
 export function foldCoveredEnd(n: number, windowMsgs: number, intervalMsgs: number): number {
-  if (n < windowMsgs || intervalMsgs < 2) return 0;
-  const k = 1 + Math.floor((n - windowMsgs) / intervalMsgs);
+  const firstAt = firstFoldAt(windowMsgs, intervalMsgs);
+  if (n < firstAt || intervalMsgs < 2) return 0;
+  const k = 1 + Math.floor((n - firstAt) / intervalMsgs);
   return Math.min(k * intervalMsgs, n);
+}
+
+/** Display turns: a user+assistant pair. The opening assistant is the leftover 1. */
+export function memoryTurnStats(messageCount: number, covered: number): { spoken: number; folded: number } {
+  return {
+    spoken: Math.floor(Math.max(0, messageCount) / 2),
+    folded: Math.floor(Math.max(0, covered) / 2),
+  };
 }
 
 export function rewindSnaps(snaps: MemorySnap[] | undefined, keepCount: number): MemorySnap[] {
@@ -67,8 +82,12 @@ export function pushSnap(snaps: MemorySnap[] | undefined, snap: MemorySnap): Mem
 
 export function formatMemoryDialog(messages: ChatMessage[]): string {
   return messages
-    .filter((m) => m.content?.trim())
-    .map((m) => `${m.role === "user" ? "用户" : m.characterName || "角色"}：${m.content.trim()}`)
+    .map((m) => {
+      const text = (m.role === "user" ? m.content : replyContextText(m.content)).trim();
+      if (!text) return "";
+      return `${m.role === "user" ? "用户" : m.characterName || "角色"}：${text}`;
+    })
+    .filter(Boolean)
     .join("\n");
 }
 

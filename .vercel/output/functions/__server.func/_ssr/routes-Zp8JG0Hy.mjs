@@ -1,71 +1,25 @@
 import { i as __toESM, n as __exportAll } from "../_runtime.mjs";
-import { t as __exportAll$1 } from "./rolldown-runtime-D7D4PA-g.mjs";
-import { A as putImage, C as emptyCharacter, D as loadAll, E as joinPromptParts, M as shortModelLabel, O as migrateGrokId, S as deleteImage, T as imageUrl, _ as cachedUrl, a as DEFAULT_STATUS_BAR, b as defaultPureParams, c as GROK_MODELS, d as PLACEHOLDERS, f as RESOLUTIONS, g as UNCENSORED_TAG, h as UC, i as DEFAULT_NAI_BASE, j as rememberUrl, k as normalizePureParams, l as NAI_MODELS, m as SENSITIVE_PREFIX, n as DEFAULT_GROK, o as FULLBODY_TAG, p as SAMPLERS, r as DEFAULT_LLM_PARAMS, s as FURRY_TAG, t as COOLDOWN_MS, u as NOISE_SCHEDULES, v as db, x as defaultSettings, y as defaultImageParams } from "./idb-CfxwoX1r.mjs";
+import { $ as shortModelLabel, A as downloadBlob, B as migrateGrokId, C as chatPickerModels, D as defaultPureParams, E as defaultImageParams, F as imageUrl, G as presetStyle, H as nearestScroller, I as indexFromY, J as randomSeed, K as pruneStarred, L as joinPromptParts, N as imageAiLabel, O as defaultSettings, P as imagePickerModels, Q as samplerPatch, R as llmIdentity, S as cachedUrl, T as db, U as normalizePureParams, V as moveId, W as parseChatCompletionPreset, X as resolveImageWrite, Y as rememberUrl, Z as restoreSampler, _ as UNCENSORED_TAG, a as DEFAULT_STATUS_BAR, b as applyLlmPick, c as FURRY_TAG, d as NOISE_SCHEDULES, et as snapshotLlmAccount, f as PLACEHOLDERS, g as UC, h as SENSITIVE_PREFIX, i as DEFAULT_NAI_BASE, j as emptyCharacter, k as deleteImage, l as GROK_MODELS, m as SAMPLERS, n as DEFAULT_GROK, nt as uniqueNumberedName, o as FOLLOW_IMAGE_AI, p as RESOLUTIONS, q as putImage, r as DEFAULT_LLM_PARAMS, rt as uniquePresetName, s as FULLBODY_TAG, t as COOLDOWN_MS, tt as uid, u as NAI_MODELS, v as activePreset, w as cn, x as autoScrollNearEdge, y as applyImageAiPick, z as loadAll } from "./idb-ic1T74Kn.mjs";
 import { R as require_react, l as require_react_dom, y as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
 import { i as zipSync, n as strToU8, r as unzipSync, t as strFromU8 } from "../_libs/fflate.mjs";
-import { A as Check, C as Ellipsis, D as ChevronUp, E as Clock, M as ArrowUp, N as ArrowDown, O as ChevronLeft, P as AlignJustify, S as FolderInput, T as Copy, _ as Lock, a as Trash2, b as Folder, c as Sparkles, d as ScanSearch, f as RefreshCw, g as Menu, h as Moon, j as Bookmark, k as ChevronDown, l as SlidersHorizontal, m as Pencil, n as WandSparkles, o as Sun, p as Plus, r as Upload, s as Star, t as X, u as Settings, v as LoaderCircle, w as Download, x as FolderPlus, y as GitBranch } from "../_libs/lucide-react.mjs";
-import { a as groupFormatHint, i as fieldPolishHint, n as FIELD_LABELS, o as roleSnapshot, r as chatContextBlock } from "./router-qNo355Hb.mjs";
+import { A as ChevronLeft, C as FileUp, D as Clock, E as Copy, F as ArrowDown, I as AlignJustify, M as Check, N as Bookmark, O as ChevronUp, P as ArrowUp, S as FolderInput, T as Download, _ as Lock, a as Trash2, b as Folder, c as Sparkles, d as ScanSearch, f as RefreshCw, g as Menu, h as Moon, j as ChevronDown, k as ChevronRight, l as SlidersHorizontal, m as Pencil, n as WandSparkles, o as Sun, p as Plus, r as Upload, s as Star, t as X, u as Settings, v as LoaderCircle, w as Ellipsis, x as FolderPlus, y as GitBranch } from "../_libs/lucide-react.mjs";
+import { a as chatImageSystem, c as roleSnapshot, i as chatContextBlock, l as splitChatPrompt, n as FIELD_LABELS, o as fieldPolishHint, r as IMAGE_SHOT_RULES, s as groupFormatHint } from "./router-CW3YAV9l.mjs";
 import { t as create } from "../_libs/zustand.mjs";
-import { t as clsx } from "../_libs/clsx.mjs";
-import { t as twMerge } from "../_libs/tailwind-merge.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/engine-B4_pXVwZ.js
-function cn(...inputs) {
-	return twMerge(clsx(inputs));
-}
-function uid(prefix = "") {
-	return `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-}
-function downloadBlob(blob, filename) {
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement("a");
-	a.href = url;
-	a.download = filename;
-	document.body.appendChild(a);
-	a.click();
-	a.remove();
-	setTimeout(() => URL.revokeObjectURL(url), 1500);
-}
-function randomSeed() {
-	return Math.floor(Math.random() * 2 ** 32);
-}
-function moveId(ids, id, to) {
-	const from = ids.indexOf(id);
-	if (from < 0) return ids;
-	const next = ids.slice();
-	next.splice(from, 1);
-	next.splice(Math.max(0, Math.min(next.length, to)), 0, id);
-	return next;
-}
-function indexFromY(rows, y) {
-	if (!rows.length) return 0;
-	for (let i = 0; i < rows.length; i++) {
-		const box = rows[i].getBoundingClientRect();
-		if (y < box.top + box.height / 2) return i;
-	}
-	return rows.length - 1;
-}
-function nearestScroller(el) {
-	let n = el;
-	while (n && n !== document.body) {
-		const oy = getComputedStyle(n).overflowY;
-		if (oy === "auto" || oy === "scroll" || oy === "overlay") return n;
-		n = n.parentElement;
-	}
-	return null;
-}
-function autoScrollNearEdge(scroller, clientY, edge = 52) {
-	const box = scroller.getBoundingClientRect();
-	const max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
-	if (max <= 0) return 0;
-	let dy = 0;
-	if (clientY < box.top + edge) dy = -Math.min(28, Math.max(3, (box.top + edge - clientY) * .4));
-	else if (clientY > box.bottom - edge) dy = Math.min(28, Math.max(3, (clientY - (box.bottom - edge)) * .4));
-	if (!dy) return 0;
-	const next = Math.max(0, Math.min(max, scroller.scrollTop + dy));
-	const applied = next - scroller.scrollTop;
-	scroller.scrollTop = next;
-	return applied;
-}
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-Zp8JG0Hy.js
+var routes_Zp8JG0Hy_exports = /* @__PURE__ */ __exportAll({
+	a: () => invalidateMemory,
+	c: () => sendUser,
+	component: () => Home,
+	i: () => editMessage,
+	n: () => attachImage,
+	o: () => regenMessage,
+	r: () => branchFrom,
+	s: () => sendOpening,
+	t: () => abortChat
+});
+var import_react = /* @__PURE__ */ __toESM(require_react());
+var import_jsx_runtime = require_jsx_runtime();
+var import_react_dom = require_react_dom();
 function presetNameFrom(params) {
 	const t = joinPromptParts(params.promptFront, params.promptMid, params.promptBack).replace(/\s+/g, " ").trim();
 	if (!t) return "未命名";
@@ -108,11 +62,16 @@ function baseSettings() {
 		llmModel: "",
 		llmModels: [],
 		llmStarred: [],
+		llmAccounts: [],
 		llmParams: { ...DEFAULT_LLM_PARAMS },
+		stPresets: [],
+		stActiveId: null,
+		stParamSnapshot: null,
 		naiKey: "",
 		naiBase: DEFAULT_NAI_BASE,
 		naiConnected: false,
 		cooldownUntil: 0,
+		chatImage: true,
 		theme: "light"
 	};
 }
@@ -416,6 +375,12 @@ function convertRole(role, grokModelId) {
 		extras: extrasFrom(draft.extras),
 		memory,
 		memoryUntil,
+		memoryFoldAt: memoryUntil,
+		memorySnaps: memory ? [{
+			covered: memoryUntil,
+			text: memory,
+			foldAt: memoryUntil
+		}] : [],
 		characters,
 		imageParams,
 		messages: Array.isArray(o.messages) ? o.messages.map((m) => convertMessage(m, characters)) : [],
@@ -563,6 +528,7 @@ async function exportArchive(kind) {
 			llmModel: "",
 			llmModels: [],
 			llmStarred: [],
+			llmAccounts: [],
 			llmParams: {
 				temperature: .9,
 				topP: 1,
@@ -571,10 +537,14 @@ async function exportArchive(kind) {
 				maxTokens: 4096,
 				contextTurns: 16
 			},
+			stPresets: [],
+			stActiveId: null,
+			stParamSnapshot: null,
 			naiKey: "",
 			naiBase: "https://api.idlecloud.cc",
 			naiConnected: false,
 			cooldownUntil: 0,
+			chatImage: true,
 			theme: "light"
 		},
 		folders,
@@ -585,11 +555,6 @@ async function exportArchive(kind) {
 		history,
 		hasImages: kind === "full"
 	};
-	dump.settings = {
-		...dump.settings,
-		naiKey: "",
-		llmKey: ""
-	};
 	if (kind === "lite") {
 		dump.favorites = (dump.favorites ?? []).map((f) => ({
 			...f,
@@ -599,7 +564,8 @@ async function exportArchive(kind) {
 			...h,
 			blobId: void 0
 		}));
-		downloadBlob(new Blob([JSON.stringify(dump)], { type: "application/json" }), `绘语-无配图-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`);
+		const blob = new Blob([JSON.stringify(dump)], { type: "application/json" });
+		downloadBlob(blob, `绘语-无配图-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`);
 		return;
 	}
 	const files = { "huiyu.json": strToU8(JSON.stringify(dump)) };
@@ -674,12 +640,17 @@ async function importArchive(file) {
 		await db.appearances.bulkPut(dump.appearances ?? []);
 		await db.favorites.bulkPut((dump.favorites ?? []).map(migrateFavorite).filter(Boolean));
 		await db.history.bulkPut(dump.history ?? []);
-		const prev = await db.kv.get("settings");
+		const prevVal = (await db.kv.get("settings"))?.value ?? void 0;
+		const dumpS = dump.settings;
 		const merged = {
-			...prev?.value ?? {},
-			...dump.settings,
-			naiKey: (prev?.value)?.naiKey || dump.settings?.naiKey || "",
-			llmKey: (prev?.value)?.llmKey || dump.settings?.llmKey || ""
+			...prevVal ?? {},
+			...dumpS,
+			naiKey: dumpS?.naiKey || prevVal?.naiKey || "",
+			llmKey: dumpS?.llmKey || prevVal?.llmKey || "",
+			llmAccounts: Array.isArray(dumpS?.llmAccounts) ? dumpS.llmAccounts : prevVal?.llmAccounts ?? [],
+			stPresets: Array.isArray(dumpS?.stPresets) ? dumpS.stPresets : prevVal?.stPresets ?? [],
+			stActiveId: dumpS?.stActiveId ?? prevVal?.stActiveId ?? null,
+			stParamSnapshot: dumpS?.stParamSnapshot ?? prevVal?.stParamSnapshot ?? null
 		};
 		await db.kv.put({
 			key: "settings",
@@ -898,6 +869,352 @@ function modelShort(id) {
 	if (m.family === "v4") return id.includes("curated") ? "4C" : "4";
 	return m.label.replace(/^NAI\s+/i, "").replace(/\s*Full$/i, "");
 }
+var TOP = /* @__PURE__ */ new Set([
+	"think",
+	"think_nya",
+	"think_nya~",
+	"game",
+	"background",
+	"options",
+	"option",
+	"details",
+	"summary",
+	"os",
+	"disclaimer",
+	"safety_check",
+	"im_start",
+	"im_end",
+	"pad",
+	"pad_end",
+	"censorship_bypass"
+]);
+function matchTag(s, i) {
+	if (s[i] !== "<") return null;
+	if (s.startsWith("<!", i)) {
+		const end = s.indexOf(">", i + 2);
+		return {
+			start: i,
+			end: end < 0 ? s.length : end + 1,
+			name: "!--",
+			closing: false
+		};
+	}
+	const slice = s.slice(i);
+	const pipe = slice.match(/^<\|([a-zA-Z_][\w-]*)\|>/);
+	if (pipe) return {
+		start: i,
+		end: i + pipe[0].length,
+		name: pipe[1].toLowerCase(),
+		closing: false
+	};
+	const close = slice.match(/^<\/([a-zA-Z][\w:~-]*)\s*>/);
+	if (close) return {
+		start: i,
+		end: i + close[0].length,
+		name: close[1].toLowerCase(),
+		closing: true
+	};
+	const open = slice.match(/^<([a-zA-Z][\w:~-]*)(?:\s[^>]*)?>/);
+	if (open) return {
+		start: i,
+		end: i + open[0].length,
+		name: open[1].toLowerCase(),
+		closing: false
+	};
+	return null;
+}
+function findClose(s, from, name) {
+	let depth = 1;
+	let i = from;
+	while (i < s.length) {
+		const lt = s.indexOf("<", i);
+		if (lt < 0) return -1;
+		const t = matchTag(s, lt);
+		if (!t) {
+			i = lt + 1;
+			continue;
+		}
+		if (t.name === name) {
+			if (t.closing) {
+				depth--;
+				if (depth === 0) return t.start;
+			} else depth++;
+		}
+		i = t.end;
+	}
+	return -1;
+}
+var CHILDREN = {
+	details: /* @__PURE__ */ new Set(["summary"]),
+	options: /* @__PURE__ */ new Set(["option"])
+};
+function nextTopOpen(s, from, parent) {
+	const skip = parent ? CHILDREN[parent] : void 0;
+	let i = from;
+	while (i < s.length) {
+		const lt = s.indexOf("<", i);
+		if (lt < 0) return -1;
+		const t = matchTag(s, lt);
+		if (!t) {
+			i = lt + 1;
+			continue;
+		}
+		if (!t.closing && TOP.has(t.name) && !skip?.has(t.name)) return t.start;
+		i = t.end;
+	}
+	return -1;
+}
+function decodeUnicodeEscapes(input) {
+	if (!input || !input.includes("\\u")) return input;
+	let s = input;
+	const hold = s.match(/\\u(?:\{[0-9a-fA-F]{0,5}|[0-9a-fA-F]{0,3})$/);
+	const tail = hold ? hold[0] : "";
+	if (tail) s = s.slice(0, -tail.length);
+	s = s.replace(/\\u\{([0-9a-fA-F]{1,6})\}/g, (full, h) => {
+		const n = Number.parseInt(h, 16);
+		return Number.isFinite(n) && n <= 1114111 ? String.fromCodePoint(n) : full;
+	});
+	s = s.replace(/\\u([0-9a-fA-F]{4})/g, (_full, h) => String.fromCharCode(Number.parseInt(h, 16)));
+	return s + tail;
+}
+function hideIncomplete(s) {
+	const i = s.lastIndexOf("<");
+	if (i < 0) return s;
+	const tail = s.slice(i);
+	if (tail.includes(">")) return s;
+	if (tail === "<" || tail === "</" || /^<\/?[a-zA-Z|][\w:~|-]*$/.test(tail) || /^<\|[\w-]*$/.test(tail) || tail === "<!") return s.slice(0, i);
+	return s;
+}
+function stripReplyTags(s) {
+	let cur = s;
+	let prev = "";
+	for (let n = 0; n < 10 && cur !== prev; n++) {
+		prev = cur;
+		cur = cur.replace(/<[a-zA-Z|][\w:~|-]*\b[^>]*>([\s\S]*?)<\/[a-zA-Z|][\w:~|-]*\s*>/g, "$1");
+		cur = cur.replace(/<\/?[a-zA-Z|][\w:~|-]*(?:\s[^>]*)?\/?>/g, "");
+		cur = cur.replace(/<\|[\w-]*\|>/g, "");
+	}
+	return cur.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+function tidy(s) {
+	return stripReplyTags(s);
+}
+function detailsParts(inner) {
+	const m = inner.match(/^\s*<summary\b[^>]*>([\s\S]*?)<\/summary\s*>/i);
+	if (m) return {
+		title: tidy(m[1]) || "折叠",
+		body: tidy(inner.slice(m[0].length))
+	};
+	const open = inner.match(/^\s*<summary\b[^>]*>([\s\S]*)$/i);
+	if (open) return {
+		title: tidy(open[1]) || "折叠",
+		body: ""
+	};
+	return {
+		title: "折叠",
+		body: tidy(inner)
+	};
+}
+function parseOptions(inner) {
+	const out = [];
+	const re = /<option\b[^>]*>([\s\S]*?)(?:<\/option\s*>|$)/gi;
+	let m;
+	while (m = re.exec(inner)) {
+		const t = tidy(m[1]);
+		if (t) out.push(t);
+	}
+	if (!out.length) for (const line of tidy(inner).split(/\n+/)) {
+		const t = line.trim();
+		if (t) out.push(t);
+	}
+	return out;
+}
+function thinkTitle(name) {
+	return name === "os" ? "内心" : "思考";
+}
+function sliceInner(s, openEnd, name) {
+	const close = findClose(s, openEnd, name);
+	const next = nextTopOpen(s, openEnd, name);
+	if (close >= 0 && (next < 0 || close <= next)) {
+		const t = matchTag(s, close);
+		return {
+			inner: s.slice(openEnd, close),
+			after: t ? t.end : close
+		};
+	}
+	if (next >= 0) return {
+		inner: s.slice(openEnd, next),
+		after: next
+	};
+	return {
+		inner: s.slice(openEnd),
+		after: s.length
+	};
+}
+function parseReplyMarkup(raw) {
+	const text = hideIncomplete(decodeUnicodeEscapes(raw || ""));
+	const think = [];
+	const notes = [];
+	const options = [];
+	const bodySegs = [];
+	let i = 0;
+	const pushNote = (title, body) => {
+		const t = title.trim() || "折叠";
+		const b = body.trim();
+		if (!b && !t) return;
+		notes.push({
+			kind: "note",
+			title: t,
+			body: b
+		});
+	};
+	while (i < text.length) {
+		const lt = text.indexOf("<", i);
+		if (lt < 0) {
+			bodySegs.push(text.slice(i));
+			break;
+		}
+		if (lt > i) bodySegs.push(text.slice(i, lt));
+		const t = matchTag(text, lt);
+		if (!t) {
+			bodySegs.push(text[lt]);
+			i = lt + 1;
+			continue;
+		}
+		if (t.closing || t.name === "!--") {
+			i = t.end;
+			continue;
+		}
+		if (!TOP.has(t.name)) {
+			const { inner, after } = sliceInner(text, t.end, t.name);
+			bodySegs.push(inner);
+			i = after;
+			continue;
+		}
+		const { inner, after } = sliceInner(text, t.end, t.name);
+		if (t.name === "think" || t.name === "think_nya" || t.name === "think_nya~" || t.name === "os") {
+			const body = tidy(inner);
+			if (body) think.push({
+				kind: "think",
+				title: thinkTitle(t.name),
+				body
+			});
+		} else if (t.name === "game") bodySegs.push(inner);
+		else if (t.name === "background") pushNote("背景", tidy(inner));
+		else if (t.name === "details") {
+			const d = detailsParts(inner);
+			pushNote(d.title, d.body);
+		} else if (t.name === "summary") pushNote("摘要", tidy(inner));
+		else if (t.name === "options") options.push(...parseOptions(inner));
+		else if (t.name === "option") {
+			const o = tidy(inner);
+			if (o) options.push(o);
+		}
+		i = after;
+	}
+	return {
+		body: tidy(bodySegs.join("")),
+		folds: [...think, ...notes],
+		options
+	};
+}
+function replyStoryText(raw) {
+	return parseReplyMarkup(raw).body;
+}
+function replyContextText(raw) {
+	const p = parseReplyMarkup(raw);
+	const extra = p.folds.filter((f) => f.kind !== "think").map((f) => f.body).filter(Boolean);
+	return [p.body, ...extra].filter(Boolean).join("\n\n");
+}
+var MEMORY_CHAR_CAP = 3800;
+function clipMemoryText(text) {
+	const t = text.trim();
+	if (t.length <= 3800) return t;
+	return t.slice(0, MEMORY_CHAR_CAP).replace(/\s+\S*$/, "").trim();
+}
+function isPlausibleMemory(text) {
+	const t = text.trim();
+	if (t.length < 24) return false;
+	if (/^(好的|收到|ok|done|无|没有|（无）)/i.test(t) && t.length < 80) return false;
+	return true;
+}
+function foldIntervalMessages(contextTurns) {
+	return Math.max(4, Math.max(4, contextTurns) - 6) * 2;
+}
+/** First fold fires one pair before the raw window is full. */
+function firstFoldAt(windowMsgs, intervalMsgs) {
+	return Math.max(intervalMsgs, windowMsgs - 2);
+}
+/** Next chunk to compress, or null if not yet. */
+function planFold(n, covered, foldAt, windowMsgs, intervalMsgs) {
+	const I = intervalMsgs;
+	if (n < firstFoldAt(windowMsgs, I) || I < 2) return null;
+	if (foldAt > 0 && n < foldAt + I) return null;
+	if (covered <= 0) return {
+		start: 0,
+		end: Math.min(I, n)
+	};
+	const end = covered + I;
+	if (end > n) return null;
+	return {
+		start: covered,
+		end
+	};
+}
+/** How far the current line should be covered if every fold had succeeded. */
+function foldCoveredEnd(n, windowMsgs, intervalMsgs) {
+	const firstAt = firstFoldAt(windowMsgs, intervalMsgs);
+	if (n < firstAt || intervalMsgs < 2) return 0;
+	const k = 1 + Math.floor((n - firstAt) / intervalMsgs);
+	return Math.min(k * intervalMsgs, n);
+}
+/** Display turns: a user+assistant pair. The opening assistant is the leftover 1. */
+function memoryTurnStats(messageCount, covered) {
+	return {
+		spoken: Math.floor(Math.max(0, messageCount) / 2),
+		folded: Math.floor(Math.max(0, covered) / 2)
+	};
+}
+function rewindSnaps(snaps, keepCount) {
+	return (snaps ?? []).filter((s) => s.covered <= keepCount && s.covered >= 0);
+}
+function applySnaps(snaps) {
+	const last = snaps[snaps.length - 1];
+	return {
+		memorySnaps: snaps,
+		memory: last?.text ?? "",
+		memoryUntil: last?.covered ?? 0,
+		memoryFoldAt: last?.foldAt ?? 0
+	};
+}
+function pushSnap(snaps, snap) {
+	return [...(snaps ?? []).filter((s) => s.covered < snap.covered), snap];
+}
+function formatMemoryDialog(messages) {
+	return messages.map((m) => {
+		const text = (m.role === "user" ? m.content : replyContextText(m.content)).trim();
+		if (!text) return "";
+		return `${m.role === "user" ? "用户" : m.characterName || "角色"}：${text}`;
+	}).filter(Boolean).join("\n");
+}
+function normalizeChatMemory(c) {
+	let snaps = Array.isArray(c.memorySnaps) ? c.memorySnaps.filter((s) => s && typeof s.text === "string" && typeof s.covered === "number") : [];
+	if (!snaps.length && c.memory?.trim()) snaps = [{
+		covered: Math.max(0, c.memoryUntil || 0),
+		text: c.memory,
+		foldAt: Math.max(0, c.memoryFoldAt || c.memoryUntil || 0)
+	}];
+	return {
+		...c,
+		...applySnaps(snaps)
+	};
+}
+var emptyMemory = () => ({
+	memory: "",
+	memoryUntil: 0,
+	memoryFoldAt: 0,
+	memorySnaps: []
+});
 var ui0 = () => ({
 	tab: "chat",
 	sidebar: false,
@@ -923,7 +1240,8 @@ var ui0 = () => ({
 	extraPromptOpen: false,
 	autoPolish: false,
 	paramsJump: null,
-	llmSettings: false
+	llmSettings: false,
+	memoryHint: null
 });
 function persistChat(c) {
 	if (c.isDraft) return;
@@ -948,8 +1266,10 @@ var useApp = create((set, get) => ({
 		const data = await loadAll();
 		const [pureRow, currentRow] = await Promise.all([db.kv.get("pureParams"), db.kv.get("currentId")]);
 		const live = data.chats.filter((c) => !c.isDraft).map((c) => ({
-			...c,
-			grokModelId: migrateGrokId(c.grokModelId)
+			...normalizeChatMemory(c),
+			grokModelId: migrateGrokId(c.grokModelId),
+			imageModelId: c.imageModelId || null,
+			imageModelPin: c.imageModelPin || null
 		}));
 		const settings = {
 			...data.settings,
@@ -1001,6 +1321,19 @@ var useApp = create((set, get) => ({
 		get().setSettings({ grokModelId: id });
 		const cur = get().current();
 		if (cur) get().patchChat(cur.id, { grokModelId: id });
+	},
+	clearImageAi: () => {
+		set((s) => ({ chats: s.chats.map((c) => {
+			if (!c.imageModelId && !c.imageModelPin) return c;
+			const next = {
+				...c,
+				imageModelId: null,
+				imageModelPin: null,
+				updatedAt: Date.now()
+			};
+			persistChat(next);
+			return next;
+		}) }));
 	},
 	current: () => get().chats.find((c) => c.id === get().currentId),
 	patchChat: (id, p) => {
@@ -1066,6 +1399,8 @@ var useApp = create((set, get) => ({
 			extras: [],
 			memory: "",
 			memoryUntil: 0,
+			memoryFoldAt: 0,
+			memorySnaps: [],
 			characters: [emptyCharacter(1)],
 			imageParams: defaultImageParams(),
 			messages: [],
@@ -1649,6 +1984,8 @@ function fakePureChat(params, grokModelId) {
 		extras: [],
 		memory: "",
 		memoryUntil: 0,
+		memoryFoldAt: 0,
+		memorySnaps: [],
 		characters: [],
 		imageParams: params,
 		messages: [],
@@ -1664,9 +2001,16 @@ async function readJsonError(res, fallback) {
 }
 async function grokOnce(body) {
 	const s = useApp.getState().settings;
-	if (s.chatSource === "api") {
-		if (!s.llmConnected || !s.llmKey) throw new Error("还没连接对话 API");
-		if (!s.llmModel) throw new Error("还没选择模型");
+	const presetOn = Boolean(s.stActiveId);
+	const viaBody = body.via;
+	const modelBody = typeof body.model === "string" ? body.model : "";
+	const rest = { ...body };
+	delete rest.via;
+	delete rest.model;
+	if ((viaBody === "api" || viaBody === "grok" ? viaBody : s.chatSource) === "api") {
+		const model = modelBody || s.llmModel;
+		if (!s.llmKey) throw new Error("还没连接对话 API");
+		if (!model) throw new Error("还没选择模型");
 		const res = await fetch("/api/llm", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -1674,11 +2018,11 @@ async function grokOnce(body) {
 				action: "chat",
 				baseUrl: s.llmBase,
 				apiKey: s.llmKey,
-				model: s.llmModel,
+				model,
 				params: s.llmParams,
-				...body,
+				...rest,
 				stream: false,
-				max_tokens: body.max_tokens ?? s.llmParams.maxTokens
+				max_tokens: rest.max_tokens ?? s.llmParams.maxTokens
 			})
 		});
 		const data = await res.json();
@@ -1689,8 +2033,9 @@ async function grokOnce(body) {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
-			...body,
-			stream: false
+			...rest,
+			stream: false,
+			params: presetOn ? s.llmParams : void 0
 		})
 	});
 	const data = await res.json();
@@ -1716,6 +2061,7 @@ function consumeSse(chunk, onDelta, acc) {
 async function grokStream(body, onDelta, signal) {
 	const s = useApp.getState().settings;
 	const api = s.chatSource === "api";
+	const presetOn = Boolean(s.stActiveId);
 	if (api) {
 		if (!s.llmConnected || !s.llmKey) throw new Error("还没连接对话 API");
 		if (!s.llmModel) throw new Error("还没选择模型");
@@ -1732,7 +2078,8 @@ async function grokStream(body, onDelta, signal) {
 		max_tokens: body.max_tokens ?? s.llmParams.maxTokens
 	} : {
 		...body,
-		stream: true
+		stream: true,
+		params: presetOn ? s.llmParams : void 0
 	};
 	const res = await fetch(url, {
 		method: "POST",
@@ -1968,9 +2315,19 @@ function formatUserForImage(raw) {
 function recentSceneForImage(messages, n = 4) {
 	return messages.slice(-n).map((m) => {
 		if (m.role === "user") return formatUserForImage(m.content);
-		if (m.role === "narrator") return m.content ? `旁白：${m.content}` : "";
-		return `${m.characterName || "角色"}：${m.content}`;
+		if (m.role === "narrator") return m.content ? `旁白：${replyContextText(m.content)}` : "";
+		return `${m.characterName || "角色"}：${replyContextText(m.content)}`;
 	}).filter(Boolean).join("\n");
+}
+/** 本镜 = this assistant reply (or override); residual = last 4 bubbles before it. */
+function shotAndResidual(messages, msgId, shotOverride) {
+	const idx = messages.findIndex((m) => m.id === msgId);
+	const msg = idx >= 0 ? messages[idx] : void 0;
+	const before = idx >= 0 ? messages.slice(0, idx) : messages;
+	return {
+		shot: (shotOverride ?? (msg ? replyStoryText(msg.content) : "")).trim(),
+		residual: recentSceneForImage(before, 4)
+	};
 }
 function escapeRegExp(s) {
 	return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -2205,23 +2562,6 @@ function resolveAbsentIds(absent, characters) {
 	}
 	return ids;
 }
-var engine_exports = /* @__PURE__ */ __exportAll$1({
-	afterPaint: () => afterPaint,
-	genPhaseLabel: () => genPhaseLabel,
-	generateNai: () => generateNai,
-	historyMessages: () => historyMessages,
-	makeAssistantPlaceholder: () => makeAssistantPlaceholder,
-	makeImageRecord: () => makeImageRecord,
-	makeUserMessage: () => makeUserMessage,
-	parseGroup: () => parseGroup,
-	parseImageTagOutput: () => parseImageTagOutput,
-	polishAll: () => polishAll,
-	polishField: () => polishField,
-	recentWindow: () => recentWindow,
-	stripStatus: () => stripStatus,
-	summarizeMemory: () => summarizeMemory,
-	writeImageTags: () => writeImageTags
-});
 function stripStatus(text) {
 	const i = text.lastIndexOf("状态栏:");
 	if (i < 0) return {
@@ -2237,12 +2577,20 @@ function recentWindow() {
 	const s = useApp.getState().settings;
 	return (s.chatSource === "api" ? Math.max(4, s.llmParams.contextTurns) : 20) * 2;
 }
+function foldWindow() {
+	const s = useApp.getState().settings;
+	const turns = s.chatSource === "api" ? Math.max(4, s.llmParams.contextTurns) : 20;
+	return {
+		W: turns * 2,
+		I: foldIntervalMessages(turns)
+	};
+}
 function historyMessages(chat, upto) {
 	const msgs = chat.messages.slice(0, upto ?? chat.messages.length);
 	const start = Math.max(0, msgs.length - recentWindow());
 	return msgs.slice(start).filter((m) => m.role !== "narrator" || m.content).map((m) => ({
 		role: m.role === "user" ? "user" : "assistant",
-		content: m.role === "user" ? formatUserForChat(m.content) : stripSpeakerPrefix(m.content, [
+		content: m.role === "user" ? formatUserForChat(m.content) : stripSpeakerPrefix(replyContextText(m.content), [
 			m.characterName,
 			chat.name,
 			...chat.characters.map((c) => c.name),
@@ -2251,6 +2599,7 @@ function historyMessages(chat, upto) {
 	}));
 }
 async function polishAll(chat, grokModelId, instruction) {
+	const style = presetStyle(useApp.getState().settings, "polish", chat);
 	return parsePolishJson(await grokOnce({
 		task: instruction?.trim() ? "personalize" : "polish",
 		grokModelId,
@@ -2258,7 +2607,8 @@ async function polishAll(chat, grokModelId, instruction) {
 		messages: [{
 			role: "user",
 			content: buildPolishUserContent(chat)
-		}]
+		}],
+		...style
 	}));
 }
 async function polishField(chat, grokModelId, field, instruction, charId) {
@@ -2283,41 +2633,57 @@ async function polishField(chat, grokModelId, field, instruction, charId) {
 			role: "user",
 			content: roleSnapshot(chat)
 		}],
-		max_tokens: 2e3
+		max_tokens: 2e3,
+		...presetStyle(useApp.getState().settings, "field", chat)
 	}), field);
 }
-async function summarizeMemory(chat, grokModelId) {
+async function summarizeMemory(chat, grokModelId, slice, previous) {
 	const keep = recentWindow();
-	const older = chat.messages.slice(0, Math.max(0, chat.messages.length - keep));
-	if (older.length < 4) return chat.memory;
-	const dialog = older.map((m) => `${m.role === "user" ? "用户" : m.characterName || "角色"}：${m.content}`).join("\n");
-	return grokOnce({
+	const older = slice ?? chat.messages.slice(0, Math.max(0, chat.messages.length - keep));
+	if (older.length < 2) throw new Error("memory-skip");
+	const dialog = formatMemoryDialog(older);
+	if (!dialog.trim()) throw new Error("memory-skip");
+	const clipped = clipMemoryText(await grokOnce({
 		task: "memory",
 		grokModelId,
 		messages: [{
 			role: "user",
-			content: `上一份备忘：\n${chat.memory || "（无）"}\n\n需要收进去的对白：\n${dialog}`
+			content: `上一份备忘：\n${previous ?? chat.memory ?? "（无）"}\n\n需要收进去的对白：\n${dialog}`
 		}]
-	});
+	}));
+	if (!isPlausibleMemory(clipped)) throw new Error("memory-invalid");
+	return clipped;
 }
-function imageBrief(chat, last) {
+function nextFoldSlice(chat) {
+	const { W, I } = foldWindow();
+	return planFold(chat.messages.length, chat.memoryUntil || 0, chat.memoryFoldAt || 0, W, I);
+}
+function imageBrief(chat, opts) {
 	const names = chat.characters.map((c) => c.name).filter(Boolean).join("、");
 	const roster = chat.characters.map((c, i) => `${i + 1}. ${c.name || `角色${i + 1}`}`).join("\n");
 	const format = chat.isMulti && chat.promptMode === "insert" ? `输出 JSON（不要 markdown）：{"base":"人数场景镜头光线","chars":{${chat.characters.map((c) => `"${c.name || c.id}":"..."`).join(",")}},"absent":[]}
 chars 的键必须逐字用上面的角色名。不在镜头的角色放进 absent，不要写进 chars。没人离开则 absent 为 []。` : chat.isMulti ? "只输出英文 tag 一行，用 char1: ... char2: ... 区分。禁止 JSON，禁止 ENABLED。" : "只输出英文 tag 一行。禁止 JSON。";
+	const shot = (opts.shot || "").trim();
+	const residual = (opts.residual || opts.last || "").trim();
 	return `角色：${names || "（未命名）"}
 外貌已由用户写好，不要重复（含发色瞳色体型种族整套衣服）。
 成人提示词加强：${chat.adultBoost ? "开" : "关"}
 多人：${chat.isMulti ? "是" : "否"}　插入模式：${chat.promptMode}
 ${chat.isMulti ? `角色名单：\n${roster}` : ""}
 
-写法：先抽出镜头里最显眼的动作/部位，写成具体真 tag，不要收成 ass focus、naughty face 这种安全词。空格真 tag，禁止下划线。不要写画师质量词和外貌。
+${IMAGE_SHOT_RULES}
+
+写法：先抽出本镜里最显眼的动作/部位，写成具体真 tag，不要收成 ass focus、naughty face 这种安全词。空格真 tag，禁止下划线。不要写画师质量词和外貌。
 用户已发生的动作优先于角色回里写软了的版本，必须写成已经发生，不要停在入口。
 成人开着：把画面写透、写够，不要保守。「不要硬塞」只挡住完全无关的内容。
 成人关着：对白里看得见的仍写，不额外堆没写到的特写；完全没有性/血腥则不加 nsfw。
+只输出标签，不要解释。
 
-最近对白：
-${last}
+本镜（姿势、镜头、正在做的事只认这段）：
+${shot || "（无）"}
+
+${chat.memory.trim() ? `长期记忆（只继承没被推翻的状态）：\n${chat.memory.trim()}\n` : ""}残留参考（不要继承已结束的动作/体位/朝向）：
+${residual || "（无）"}
 
 ${format}`;
 }
@@ -2355,17 +2721,30 @@ function parseImageTagOutput(text, chat) {
 		absent: []
 	};
 }
-async function writeImageTags(chat, lastText, grokModelId) {
-	return parseImageTagOutput(await grokOnce({
+async function writeImageTags(chat, lastText, grokModelId, shotText) {
+	const extra = chat.adultBoost ? "成人提示词加强：开。这是最高优先级之一。对白里的动作、部位、体液必须写成具体真 tag，写透（22–40 个），不要收成 ass focus / naughty face。无关内容仍不要加。只输出标签，不要解释。" : "成人提示词加强：关。对白里看得见的仍写具体真 tag，不要额外堆没写到的器官特写。完全没有性/血腥的场面不要加 nsfw。只输出标签，不要解释。";
+	const dest = resolveImageWrite(chat.imageModelId);
+	const payload = {
 		task: "image",
-		grokModelId,
-		extraSystem: chat.adultBoost ? "成人提示词加强：开。这是最高优先级之一。对白里的动作、部位、体液必须写成具体真 tag，写透（22–40 个），不要收成 ass focus / naughty face。无关内容仍不要加。" : "成人提示词加强：关。对白里看得见的仍写具体真 tag，不要额外堆没写到的器官特写。完全没有性/血腥的场面不要加 nsfw。",
+		extraSystem: extra,
 		messages: [{
 			role: "user",
-			content: imageBrief(chat, lastText)
+			content: imageBrief(chat, {
+				shot: shotText,
+				residual: lastText
+			})
 		}],
 		max_tokens: 900
-	}), chat);
+	};
+	if (!dest.split) payload.grokModelId = grokModelId;
+	else if (dest.via === "grok") {
+		payload.via = "grok";
+		payload.grokModelId = dest.grokModelId;
+	} else {
+		payload.via = "api";
+		payload.model = dest.model;
+	}
+	return parseImageTagOutput(await grokOnce(payload), chat);
 }
 function genPhaseLabel(status, error) {
 	if (status === "writing") return "写提示词中";
@@ -2493,28 +2872,24 @@ function makeImageRecord(partial = {}) {
 		...partial
 	};
 }
-//#endregion
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-DcoSmm1d.js
-var routes_DcoSmm1d_exports = /* @__PURE__ */ __exportAll({
-	a: () => regenMessage,
-	component: () => Home,
-	i: () => editMessage,
-	n: () => attachImage,
-	o: () => sendOpening,
-	r: () => branchFrom,
-	s: () => sendUser,
-	t: () => abortChat
-});
-var import_react = /* @__PURE__ */ __toESM(require_react());
-var import_jsx_runtime = require_jsx_runtime();
-var import_react_dom = require_react_dom();
 var aborts = /* @__PURE__ */ new Map();
 var busy = /* @__PURE__ */ new Set();
+var memoryEpoch = /* @__PURE__ */ new Map();
+var memoryBusy = /* @__PURE__ */ new Set();
 function chat(id) {
 	return useApp.getState().chats.find((c) => c.id === id);
 }
 function patch(id, fn) {
 	useApp.getState().patchChat(id, fn);
+}
+function imageOn() {
+	return useApp.getState().settings.chatImage !== false;
+}
+function lastAssist(c) {
+	return [...c.messages].reverse().find((m) => m.role === "assistant" || m.role === "narrator");
+}
+function bumpMemoryEpoch(id) {
+	memoryEpoch.set(id, (memoryEpoch.get(id) ?? 0) + 1);
 }
 async function sendOpening(id) {
 	await runReply(id, null, true);
@@ -2533,6 +2908,9 @@ function abortChat(id) {
 	aborts.get(id)?.abort();
 	aborts.delete(id);
 }
+function invalidateMemory(id) {
+	bumpMemoryEpoch(id);
+}
 async function regenMessage(id, msgId) {
 	abortChat(id);
 	const c = chat(id);
@@ -2543,8 +2921,9 @@ async function regenMessage(id, msgId) {
 	patch(id, (ch) => ({
 		...ch,
 		messages: cut,
-		memoryUntil: Math.min(ch.memoryUntil, cut.length)
+		...applySnaps(rewindSnaps(ch.memorySnaps, cut.length))
 	}));
+	bumpMemoryEpoch(id);
 	await runReply(id, [...cut].reverse().find((m) => m.role === "user")?.content ?? null, cut.length === 0);
 }
 async function branchFrom(id, msgId) {
@@ -2552,6 +2931,7 @@ async function branchFrom(id, msgId) {
 	if (!c) return;
 	const idx = c.messages.findIndex((m) => m.id === msgId);
 	if (idx < 0) return;
+	const keep = idx + 1;
 	const copy = {
 		...structuredClone(c),
 		id: uid("chat_"),
@@ -2560,13 +2940,14 @@ async function branchFrom(id, msgId) {
 		isDraft: false,
 		createdAt: Date.now(),
 		updatedAt: Date.now(),
-		messages: structuredClone(c.messages.slice(0, idx + 1))
+		messages: structuredClone(c.messages.slice(0, keep)),
+		...applySnaps(rewindSnaps(c.memorySnaps, keep))
 	};
 	useApp.setState((s) => ({
 		chats: [...s.chats, copy],
 		currentId: copy.id
 	}));
-	const { db } = await import("./idb-CfxwoX1r.mjs").then((n) => n.w).then((n) => n.a);
+	const { db } = await import("./idb-ic1T74Kn.mjs").then((n) => n.M).then((n) => n.a);
 	db.chats.put(copy);
 	useApp.getState().toast(`已开分支「${copy.name}」`);
 }
@@ -2583,6 +2964,8 @@ function applyStream(id, placeholder, full, c0) {
 			createdAt: Date.now()
 		}));
 		patch(id, (c) => {
+			const imgs = c.messages.filter((m) => m.id === placeholder.id || m.id.startsWith(placeholder.id + "_")).flatMap((m) => m.images);
+			if (mapped.length && imgs.length) mapped[mapped.length - 1].images = imgs;
 			const without = c.messages.filter((m) => m.id !== placeholder.id && !m.id.startsWith(placeholder.id + "_"));
 			return {
 				...c,
@@ -2599,10 +2982,36 @@ function applyStream(id, placeholder, full, c0) {
 		statusBar: status || c.statusBar
 	}));
 }
+function ensureWritingImage(id, placeholder) {
+	const live = chat(id);
+	if (!live) return;
+	const target = lastAssist(live) ?? placeholder;
+	if (target.images.some((g) => g.status !== "done" && g.status !== "error")) return;
+	const img = makeImageRecord({
+		model: live.imageParams.model,
+		width: live.imageParams.width,
+		height: live.imageParams.height,
+		steps: live.imageParams.steps,
+		sampler: live.imageParams.sampler,
+		negative: live.imageParams.negative,
+		seed: live.imageParams.seedLocked && live.imageParams.seed != null ? live.imageParams.seed : randomSeed(),
+		status: "writing",
+		source: "auto"
+	});
+	patch(id, (ch) => ({
+		...ch,
+		messages: ch.messages.map((m) => m.id === target.id ? {
+			...m,
+			images: [...m.images, img]
+		} : m)
+	}));
+}
 async function runReply(id, _userText, opening) {
 	const c0 = chat(id);
 	if (!c0) return;
 	const grokModelId = useApp.getState().settings.grokModelId;
+	const wantImage = imageOn();
+	const imageInChat = wantImage && !resolveImageWrite(c0.imageModelId).split;
 	const ctrl = new AbortController();
 	aborts.set(id, ctrl);
 	busy.add(id);
@@ -2613,7 +3022,7 @@ async function runReply(id, _userText, opening) {
 	}));
 	const extra = [
 		chatContextBlock(c0),
-		groupFormatHint(c0),
+		groupFormatHint(c0, imageInChat),
 		opening ? "这是开场。根据开场场景，以角色口吻先说第一句。不要以用户身份说话。" : ""
 	].filter(Boolean).join("\n\n");
 	const msgs = historyMessages(chat(id)).filter((m) => m.content);
@@ -2621,43 +3030,73 @@ async function runReply(id, _userText, opening) {
 		role: "user",
 		content: "（开始场景，请角色先开口）"
 	});
+	let raw = "";
+	let promptStarted = false;
+	let streamFailed = false;
 	try {
-		const full = await grokStream({
+		raw = await grokStream({
 			task: "chat",
 			grokModelId,
 			extraSystem: extra,
-			messages: msgs
-		}, (text) => applyStream(id, placeholder, text, c0), ctrl.signal);
-		if (full) applyStream(id, placeholder, full, c0);
+			imageSystem: imageInChat ? chatImageSystem(c0) : void 0,
+			messages: msgs,
+			...presetStyle(useApp.getState().settings, "chat", c0)
+		}, (text) => {
+			const split = splitChatPrompt(text);
+			applyStream(id, placeholder, split.visible, c0);
+			if (imageInChat && split.started && !promptStarted) {
+				promptStarted = true;
+				ensureWritingImage(id, placeholder);
+			}
+		}, ctrl.signal);
+		if (raw) applyStream(id, placeholder, splitChatPrompt(raw).visible, c0);
 	} catch (e) {
 		if (e.name === "AbortError") return;
-		patch(id, (c) => ({
+		streamFailed = true;
+		const split = splitChatPrompt(raw);
+		if (!split.visible.trim()) patch(id, (c) => ({
 			...c,
 			messages: c.messages.map((m) => m.id === placeholder.id ? {
 				...m,
 				content: m.content || `（回复失败）${e instanceof Error ? e.message : ""}`
 			} : m)
 		}));
+		else applyStream(id, placeholder, split.visible, c0);
 	} finally {
 		aborts.delete(id);
 		busy.delete(id);
 	}
 	const latest = chat(id);
 	if (!latest) return;
-	const lastAssist = [...latest.messages].reverse().find((m) => m.role === "assistant" || m.role === "narrator");
-	if (latest.canGen && lastAssist) await attachImage(id, lastAssist.id);
-	maybeMemory(id);
+	const assist = lastAssist(latest);
+	const split = splitChatPrompt(raw);
+	const visibleOk = Boolean(split.visible.trim() || assist?.content.trim());
+	if (wantImage && assist && visibleOk) {
+		if (resolveImageWrite(latest.imageModelId).split) attachImage(id, assist.id, "rewrite", void 0, void 0, void 0, split.visible);
+		else {
+			if (promptStarted && !split.started && raw) {
+				const again = splitChatPrompt(raw);
+				if (again.started) Object.assign(split, again);
+			}
+			const parsed = split.prompt ? parseImageTagOutput(split.prompt, latest) : null;
+			if (Boolean(parsed && (parsed.base || Object.keys(parsed.chars).length)) && parsed) attachImage(id, assist.id, "auto", void 0, void 0, parsed);
+			else if (!streamFailed || promptStarted) attachImage(id, assist.id, "rewrite", void 0, void 0, void 0, split.visible);
+		}
+	}
+	if (visibleOk) maybeMemory(id);
 }
-async function attachImage(id, msgId, mode = "auto", custom, customChars) {
+async function attachImage(id, msgId, mode = "auto", custom, customChars, parsed, shotText) {
+	if (!imageOn()) return;
 	const c = chat(id);
 	if (!c) return;
 	const msg = c.messages.find((m) => m.id === msgId);
 	if (!msg) return;
-	if (msg.images.some((g) => g.status !== "done" && g.status !== "error")) return;
+	if (msg.images.some((g) => g.status !== "done" && g.status !== "error" && g.status !== "writing")) return;
 	const settings = useApp.getState().settings;
 	const prev = msg.images.filter((g) => g.prompt).at(-1);
-	const needsWrite = mode !== "custom" && !(mode === "same" && prev?.prompt);
-	const img = makeImageRecord({
+	const writing = msg.images.find((g) => g.status === "writing");
+	const needsWrite = !parsed && mode !== "custom" && !(mode === "same" && prev?.prompt);
+	const img = writing && (mode === "auto" || mode === "rewrite") ? writing : makeImageRecord({
 		model: c.imageParams.model,
 		width: c.imageParams.width,
 		height: c.imageParams.height,
@@ -2668,11 +3107,24 @@ async function attachImage(id, msgId, mode = "auto", custom, customChars) {
 		status: needsWrite ? "writing" : "uploading",
 		source: mode
 	});
-	patch(id, (ch) => ({
+	if (!writing || img.id !== writing.id) {
+		if (msg.images.some((g) => g.status !== "done" && g.status !== "error")) return;
+		patch(id, (ch) => ({
+			...ch,
+			messages: ch.messages.map((m) => m.id === msgId ? {
+				...m,
+				images: [...m.images, img]
+			} : m)
+		}));
+	} else patch(id, (ch) => ({
 		...ch,
 		messages: ch.messages.map((m) => m.id === msgId ? {
 			...m,
-			images: [...m.images, img]
+			images: m.images.map((g) => g.id === img.id ? {
+				...g,
+				status: "writing",
+				source: mode
+			} : g)
 		} : m)
 	}));
 	const setImg = (p) => patch(id, (ch) => ({
@@ -2700,33 +3152,28 @@ async function attachImage(id, msgId, mode = "auto", custom, customChars) {
 			if (t) charTails[k] = t;
 		}
 		if (mode !== "custom") {
-			if (mode === "same" && prev?.prompt) {
+			if (parsed) {
+				grokTail = parsed.base;
+				charTails = mapCharTails(c, parsed.chars);
+				applyAbsent(id, parsed.absent);
+			} else if (mode === "same" && prev?.prompt) {
 				grokTail = extractGrokTail(prev.prompt, c.imageParams);
 				charTails = { ...prev.charTails || {} };
 			} else {
-				const tags = await writeImageTags(c, recentSceneForImage(c.messages, 4), useApp.getState().settings.grokModelId);
+				const live = chat(id) ?? c;
+				const { shot, residual } = shotAndResidual(live.messages, msgId, shotText);
+				const tags = await writeImageTags(live, residual, useApp.getState().settings.grokModelId, shot || msg.content);
 				grokTail = tags.base;
-				const map = {};
-				for (const ch of c.imageParams.characters) {
-					const byId = tags.chars[ch.id];
-					const byName = ch.name ? tags.chars[ch.name] : "";
-					if (byId || byName) map[ch.id] = byId || byName;
-				}
-				charTails = map;
-				if (c.isMulti) {
-					const off = new Set(tags.absent || []);
-					patch(id, (ch) => ({
-						...ch,
-						imageParams: {
-							...ch.imageParams,
-							characters: ch.imageParams.characters.map((x) => ({
-								...x,
-								enabled: !off.has(x.id)
-							}))
-						}
-					}));
-				}
+				charTails = mapCharTails(live, tags.chars);
+				applyAbsent(id, tags.absent);
 			}
+		}
+		if (!grokTail && !Object.keys(charTails).length) {
+			setImg({
+				status: "error",
+				error: "提示词写失败"
+			});
+			return;
 		}
 		setImg({
 			status: "uploading",
@@ -2773,19 +3220,71 @@ async function attachImage(id, msgId, mode = "auto", custom, customChars) {
 		});
 	}
 }
+function mapCharTails(c, chars) {
+	const map = {};
+	for (const ch of c.imageParams.characters) {
+		const byId = chars[ch.id];
+		const byName = ch.name ? chars[ch.name] : "";
+		if (byId || byName) map[ch.id] = byId || byName;
+	}
+	return map;
+}
+function applyAbsent(id, absent) {
+	if (!absent?.length) return;
+	const off = new Set(absent);
+	patch(id, (ch) => ({
+		...ch,
+		imageParams: {
+			...ch.imageParams,
+			characters: ch.imageParams.characters.map((x) => ({
+				...x,
+				enabled: !off.has(x.id) && !off.has(x.name)
+			}))
+		}
+	}));
+}
+function setMemoryHint(chatId, text) {
+	useApp.getState().setUI({ memoryHint: text ? {
+		chatId,
+		text
+	} : null });
+}
 async function maybeMemory(id) {
 	const c = chat(id);
 	if (!c) return;
-	if (c.messages.length < recentWindow() + 4) return;
-	if (c.memoryUntil >= c.messages.length - recentWindow()) return;
+	const slice = nextFoldSlice(c);
+	if (!slice) return;
+	if (memoryBusy.has(id)) return;
+	const nAtStart = c.messages.length;
+	const epoch = memoryEpoch.get(id) ?? 0;
+	memoryBusy.add(id);
+	setMemoryHint(id, "生成记忆中");
 	try {
-		const mem = await summarizeMemory(c, useApp.getState().settings.grokModelId);
+		const mem = await summarizeMemory(c, useApp.getState().settings.grokModelId, c.messages.slice(slice.start, slice.end), c.memory);
+		if ((memoryEpoch.get(id) ?? 0) !== epoch) return;
+		const live = chat(id);
+		if (!live) return;
+		if (live.messages.length < slice.end) return;
+		const snap = {
+			covered: slice.end,
+			text: mem,
+			foldAt: nAtStart
+		};
 		patch(id, (ch) => ({
 			...ch,
-			memory: mem,
-			memoryUntil: Math.max(0, ch.messages.length - recentWindow())
+			...applySnaps(pushSnap(ch.memorySnaps, snap))
 		}));
-	} catch {}
+		setMemoryHint(id, "记忆已生成");
+		setTimeout(() => {
+			const ui = useApp.getState().ui.memoryHint;
+			if (ui?.chatId === id && ui.text === "记忆已生成") setMemoryHint(id, null);
+		}, 1e3);
+	} catch {
+		if ((memoryEpoch.get(id) ?? 0) !== epoch) return;
+		setMemoryHint(id, null);
+	} finally {
+		memoryBusy.delete(id);
+	}
 }
 async function editMessage(id, msgId, text) {
 	const c = chat(id);
@@ -2795,13 +3294,14 @@ async function editMessage(id, msgId, text) {
 	const msg = c.messages[idx];
 	if (msg.role === "user") {
 		abortChat(id);
+		bumpMemoryEpoch(id);
 		patch(id, (ch) => ({
 			...ch,
 			messages: [...ch.messages.slice(0, idx), {
 				...msg,
 				content: text
 			}],
-			memoryUntil: Math.min(ch.memoryUntil, idx)
+			...applySnaps(rewindSnaps(ch.memorySnaps, idx))
 		}));
 		await runReply(id, text, false);
 	} else patch(id, (ch) => ({
@@ -2982,16 +3482,29 @@ function Card({ className, children }) {
 		children
 	});
 }
-function FieldLabel({ children, hint, right }) {
+function FieldLabel({ children, hint, sub, right }) {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "mb-1.5 flex items-start justify-between gap-2",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-			className: "text-[13px] font-medium text-ink",
-			children
-		}), hint && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-			className: "mt-0.5 text-[11px] leading-snug text-muted",
-			children: hint
-		})] }), right]
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "min-w-0 flex-1",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "text-[13px] font-medium text-ink",
+					children
+				}),
+				sub ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "mt-0.5",
+					children: sub
+				}) : null,
+				hint && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "mt-0.5 text-[11px] leading-snug text-muted",
+					children: hint
+				})
+			]
+		}), right ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "shrink-0",
+			children: right
+		}) : null]
 	});
 }
 var TextArea = (0, import_react.forwardRef)(function TextArea({ className, ...rest }, ref) {
@@ -3201,11 +3714,10 @@ function ChatModelSelect({ align = "center", className }) {
 	const grok = useApp((s) => s.settings.grokModelId);
 	const llmModel = useApp((s) => s.settings.llmModel);
 	const starred = useApp((s) => s.settings.llmStarred);
+	const available = useApp((s) => s.settings.llmModels);
 	const connected = useApp((s) => s.settings.llmConnected);
 	if (source === "api") {
-		const ids = [];
-		if (llmModel) ids.push(llmModel);
-		for (const id of starred) if (!ids.includes(id)) ids.push(id);
+		const ids = chatPickerModels(starred, available, llmModel);
 		if (!connected || ids.length === 0) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 			type: "button",
 			className: "inline-flex h-9 items-center rounded-full px-3 text-[14px] font-medium text-muted",
@@ -3222,7 +3734,7 @@ function ChatModelSelect({ align = "center", className }) {
 				label: id,
 				short: shortModelLabel(id)
 			})),
-			onChange: (id) => useApp.getState().setSettings({ llmModel: id }),
+			onChange: (id) => useApp.getState().setSettings(applyLlmPick(useApp.getState().settings, id)),
 			align,
 			className
 		});
@@ -3241,7 +3753,10 @@ function ChatModelSelect({ align = "center", className }) {
 }
 function ChatPane({ chat }) {
 	const left = useCooldown(useApp((s) => s.settings.cooldownUntil));
+	const chatImage = useApp((s) => s.settings.chatImage !== false);
+	const memoryHint = useApp((s) => s.ui.memoryHint);
 	const scroller = (0, import_react.useRef)(null);
+	const inputRef = (0, import_react.useRef)(null);
 	const [atBottom, setAtBottom] = (0, import_react.useState)(true);
 	const [draft, setDraft] = (0, import_react.useState)("");
 	(0, import_react.useEffect)(() => {
@@ -3325,100 +3840,115 @@ function ChatPane({ chat }) {
 					]
 				}), chat.messages.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Bubble, {
 					chat,
-					msg: m
+					msg: m,
+					onUseOption: (t) => {
+						setDraft(t);
+						requestAnimationFrame(() => inputRef.current?.focus());
+					}
 				}, m.id))]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "shrink-0 bg-bg px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-1",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "mb-1.5 flex h-6 items-center gap-1.5 px-0.5 text-[13px] leading-none",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "inline-flex h-[22px] items-center gap-1.5 rounded-md border border-line bg-card px-1.5",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									className: cnToggle(portrait),
-									onClick: () => {
-										if (!portrait) useApp.getState().patchParams(chat.id, {
-											width: chat.imageParams.height,
-											height: chat.imageParams.width
-										});
-									},
-									children: "竖图"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "text-faint",
-									children: "|"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									className: cnToggle(!portrait),
-									onClick: () => {
-										if (portrait) useApp.getState().patchParams(chat.id, {
-											width: chat.imageParams.height,
-											height: chat.imageParams.width
-										});
-									},
-									children: "横图"
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "mb-1.5 flex h-6 items-center gap-1.5 px-0.5 text-[13px] leading-none",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "inline-flex h-[22px] items-center gap-1.5 rounded-md border border-line bg-card px-1.5",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										className: cnToggle(portrait),
+										onClick: () => {
+											if (!portrait) useApp.getState().patchParams(chat.id, {
+												width: chat.imageParams.height,
+												height: chat.imageParams.width
+											});
+										},
+										children: "竖图"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "text-faint",
+										children: "|"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										className: cnToggle(!portrait),
+										onClick: () => {
+											if (portrait) useApp.getState().patchParams(chat.id, {
+												width: chat.imageParams.height,
+												height: chat.imageParams.width
+											});
+										},
+										children: "横图"
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "flex min-w-0 flex-1 items-center justify-center",
+								children: chatImage ? left > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "font-medium text-danger",
+									children: [left, "s"]
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-good",
+									children: "可生图"
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-muted",
+									children: "生图已关"
 								})
-							]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "flex min-w-0 flex-1 items-center justify-center",
-							children: left > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-								className: "font-medium text-danger",
-								children: [left, "s"]
-							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "text-good",
-								children: "可生图"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								className: chat.adultBoost ? "inline-flex h-[22px] items-center rounded-md border border-line px-1.5 font-medium text-ink" : "inline-flex h-[22px] items-center rounded-md border border-line px-1.5 text-muted",
+								onClick: () => useApp.getState().patchChat(chat.id, { adultBoost: !chat.adultBoost }),
+								children: "成人提示词"
 							})
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							className: chat.adultBoost ? "inline-flex h-[22px] items-center rounded-md border border-line px-1.5 font-medium text-ink" : "inline-flex h-[22px] items-center rounded-md border border-line px-1.5 text-muted",
-							onClick: () => useApp.getState().patchChat(chat.id, { adultBoost: !chat.adultBoost }),
-							children: "成人提示词"
-						})
-					]
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-end gap-2",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							className: "grid size-9 shrink-0 place-items-center rounded-full text-muted",
-							onClick: () => {
-								const el = scroller.current;
-								if (!el) return;
-								if (atBottom) el.scrollTo({
-									top: 0,
-									behavior: "smooth"
-								});
-								else el.scrollTo({
-									top: el.scrollHeight,
-									behavior: "smooth"
-								});
-							},
-							"aria-label": atBottom ? "回到顶部" : "回到底部",
-							children: atBottom ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: "size-5 rotate-180" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowDown, { className: "size-5" })
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("textarea", {
-							value: draft,
-							onChange: (e) => setDraft(e.target.value),
-							onKeyDown: (e) => {
-								if (e.key === "Enter" && !e.shiftKey) {
-									e.preventDefault();
-									send();
-								}
-							},
-							rows: 1,
-							placeholder: "",
-							className: "max-h-32 min-h-[46px] flex-1 resize-none rounded-full border border-line bg-card px-4 py-3 text-[14px] outline-none"
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							onClick: send,
-							className: "grid size-11 shrink-0 place-items-center rounded-full bg-primary text-on-primary",
-							"aria-label": "发送",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowUp, { className: "size-5" })
-						})
-					]
-				})]
+						]
+					}),
+					memoryHint?.chatId === chat.id && memoryHint.text ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "px-[52px] pb-1 text-[12px] text-faint",
+						children: memoryHint.text
+					}) : null,
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-end gap-2",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								className: "grid size-9 shrink-0 place-items-center rounded-full text-muted",
+								onClick: () => {
+									const el = scroller.current;
+									if (!el) return;
+									if (atBottom) el.scrollTo({
+										top: 0,
+										behavior: "smooth"
+									});
+									else el.scrollTo({
+										top: el.scrollHeight,
+										behavior: "smooth"
+									});
+								},
+								"aria-label": atBottom ? "回到顶部" : "回到底部",
+								children: atBottom ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: "size-5 rotate-180" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowDown, { className: "size-5" })
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("textarea", {
+								ref: inputRef,
+								value: draft,
+								onChange: (e) => setDraft(e.target.value),
+								onKeyDown: (e) => {
+									if (e.key === "Enter" && !e.shiftKey) {
+										e.preventDefault();
+										send();
+									}
+								},
+								rows: 1,
+								placeholder: "",
+								className: "max-h-32 min-h-[46px] flex-1 resize-none rounded-full border border-line bg-card px-4 py-3 text-[14px] outline-none"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								onClick: send,
+								className: "grid size-11 shrink-0 place-items-center rounded-full bg-primary text-on-primary",
+								"aria-label": "发送",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowUp, { className: "size-5" })
+							})
+						]
+					})
+				]
 			})
 		]
 	});
@@ -3430,7 +3960,7 @@ function jumpParams(section) {
 function cnToggle(on) {
 	return on ? "px-1 font-medium text-ink" : "px-1 text-muted";
 }
-function Bubble({ chat, msg }) {
+function Bubble({ chat, msg, onUseOption }) {
 	const [edit, setEdit] = (0, import_react.useState)(false);
 	const [text, setText] = (0, import_react.useState)(msg.content);
 	const url = cachedUrl(chat.avatarBlobId);
@@ -3512,9 +4042,10 @@ function Bubble({ chat, msg }) {
 							})
 						]
 					})]
-				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RpBody, {
+				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ReplyView, {
 					text: msg.content,
-					names
+					names,
+					onUseOption
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "mt-2 flex flex-wrap gap-1.5",
@@ -3551,6 +4082,43 @@ function Bubble({ chat, msg }) {
 				})
 			]
 		})]
+	});
+}
+function ReplyView({ text, names, onUseOption }) {
+	const parsed = parseReplyMarkup(text);
+	const think = parsed.folds.filter((f) => f.kind === "think");
+	const notes = parsed.folds.filter((f) => f.kind === "note");
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+		think.map((f, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ReplyFoldRow, { fold: f }, `think-${i}-${f.title}`)),
+		parsed.body ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RpBody, {
+			text: parsed.body,
+			names
+		}) : null,
+		notes.map((f, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ReplyFoldRow, { fold: f }, `note-${i}-${f.title}`)),
+		parsed.options.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "mt-3 space-y-1.5",
+			children: parsed.options.map((opt, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				type: "button",
+				onClick: () => onUseOption?.(opt),
+				className: "block w-full rounded-[16px] border border-line bg-card px-3 py-2 text-left text-[13px] leading-snug text-ink",
+				children: opt
+			}, i))
+		}) : null
+	] });
+}
+function ReplyFoldRow({ fold }) {
+	const [open, setOpen] = (0, import_react.useState)(false);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: fold.kind === "think" ? "mb-2" : "mt-2",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+			type: "button",
+			onClick: () => setOpen((v) => !v),
+			className: "inline-flex items-center gap-1 text-[12px] text-muted",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: cn("size-3.5 shrink-0 transition", open ? "" : "-rotate-90") }), fold.title]
+		}), open && fold.body ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-narrate",
+			children: fold.body
+		}) : null]
 	});
 }
 function RpBody({ text, names }) {
@@ -3595,6 +4163,7 @@ function EditBox({ text, onChange, onOk, onCancel }) {
 	});
 }
 function ImageBlock({ chat, msg }) {
+	const chatImage = useApp((s) => s.settings.chatImage !== false);
 	const done = msg.images.filter((g) => g.status === "done" && g.blobId);
 	const pendingImg = msg.images.find((g) => g.status !== "done" && g.status !== "error");
 	const pending = Boolean(pendingImg);
@@ -3606,7 +4175,7 @@ function ImageBlock({ chat, msg }) {
 	const [kick, setKick] = (0, import_react.useState)(null);
 	const current = done[idx] ?? done[done.length - 1];
 	const busy = kick ?? pendingImg?.source ?? null;
-	const locked = pending || Boolean(kick);
+	const locked = pending || Boolean(kick) || !chatImage;
 	(0, import_react.useEffect)(() => {
 		if (!pending) setKick(null);
 	}, [pending]);
@@ -3664,7 +4233,10 @@ function ImageBlock({ chat, msg }) {
 						children: samplerLabel(current.sampler)
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-						onClick: () => jumpParams("seed"),
+						onClick: () => {
+							useApp.getState().patchParams(chat.id, { seed: current.seed });
+							jumpParams("seed");
+						},
 						children: String(current.seed).slice(0, 8)
 					}),
 					chat.isMulti && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
@@ -3740,7 +4312,8 @@ function ImageBlock({ chat, msg }) {
 							if (!current?.blobId) return;
 							const u = await imageUrl(current.blobId);
 							if (!u) return;
-							downloadBlob(await fetch(u).then((r) => r.blob()), String(current.seed));
+							const blob = await fetch(u).then((r) => r.blob());
+							downloadBlob(blob, String(current.seed));
 							setSaved(true);
 							setTimeout(() => setSaved(false), 1e3);
 						}
@@ -3867,7 +4440,14 @@ function ConnectionPanel() {
 		setApiOpen(true);
 		useApp.getState().setUI({ llmSettings: false });
 	}, [open, llmSettings]);
+	(0, import_react.useEffect)(() => {
+		if (!open) setApiOpen(false);
+	}, [open]);
 	if (!open) return null;
+	const close = () => {
+		setApiOpen(false);
+		setUI({ connection: false });
+	};
 	const save = async () => {
 		setBusy(true);
 		setErr("");
@@ -3912,21 +4492,21 @@ function ConnectionPanel() {
 		useApp.getState().setSettings({ chatSource: "api" });
 	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "absolute inset-0 z-50 overflow-y-auto bg-overlay/40 px-4 py-6 scroll-thin",
+		className: "absolute inset-0 z-50 flex justify-center px-4 py-8",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "mx-auto w-full max-w-md rounded-[28px] bg-bg p-5 pb-8 shadow-2xl",
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-0 bg-overlay/40" }),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SheetCard, {
+				title: "连接",
+				titleExtra: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+					className: "flex items-center gap-1.5 text-[13px] text-muted",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
+						on: settings.chatImage !== false,
+						onChange: (v) => useApp.getState().setSettings({ chatImage: v }),
+						label: "生图"
+					}), "生图"]
+				}),
+				onClose: close,
 				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "mb-4 flex items-center justify-between",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-							className: "text-[20px] font-semibold",
-							children: "连接"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							onClick: () => setUI({ connection: false }),
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "size-5" })
-						})]
-					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "mb-4 grid grid-cols-2 gap-3",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
@@ -3956,7 +4536,7 @@ function ConnectionPanel() {
 											await importArchive(f);
 											await useApp.getState().hydrate();
 											useApp.getState().toast("已读取存档");
-											setUI({ connection: false });
+											close();
 										} catch (err) {
 											useApp.getState().toast(err instanceof Error ? err.message : "读取失败");
 										}
@@ -4083,70 +4663,88 @@ function ConnectionPanel() {
 					})]
 				})]
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ApiSettingsModal, {
-				open: apiOpen,
-				onClose: () => setApiOpen(false)
+			apiOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "absolute inset-0 z-20 flex justify-center px-4 py-8",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					className: "absolute inset-0 bg-overlay/40",
+					onClick: () => setApiOpen(false),
+					"aria-label": "关闭"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ApiSettingsSheet, { onClose: () => setApiOpen(false) })]
 			})
 		]
 	});
 }
-function ApiSettingsModal({ open, onClose }) {
+function SheetCard({ title, titleExtra, onClose, children }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "relative z-10 flex min-h-0 w-full max-w-md flex-col overflow-hidden rounded-[28px] bg-bg shadow-2xl",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "flex shrink-0 items-center gap-2 px-5 pb-3 pt-5",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "text-[20px] font-semibold",
+					children: title
+				}),
+				titleExtra,
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					className: "ml-auto",
+					onClick: onClose,
+					"aria-label": "关闭",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "size-5" })
+				})
+			]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-6 scroll-hide",
+			children
+		})]
+	});
+}
+function ApiSettingsSheet({ onClose }) {
 	const settings = useApp((s) => s.settings);
 	const [url, setUrl] = (0, import_react.useState)(settings.llmBase);
 	const [key, setKey] = (0, import_react.useState)(settings.llmKey);
-	const [q, setQ] = (0, import_react.useState)("");
 	const [manual, setManual] = (0, import_react.useState)("");
 	const [busy, setBusy] = (0, import_react.useState)(false);
 	const [err, setErr] = (0, import_react.useState)("");
+	const [saveOpen, setSaveOpen] = (0, import_react.useState)(false);
+	const [saveName, setSaveName] = (0, import_react.useState)("");
 	(0, import_react.useEffect)(() => {
-		if (!open) return;
 		setUrl(settings.llmBase);
 		setKey(settings.llmKey);
 		setErr("");
-		setQ("");
-	}, [
-		open,
-		settings.llmBase,
-		settings.llmKey
-	]);
-	const models = settings.llmModels;
-	const filtered = (0, import_react.useMemo)(() => {
-		const t = q.trim().toLowerCase();
-		const list = t ? models.filter((id) => id.toLowerCase().includes(t)) : models;
-		const starred = new Set(settings.llmStarred);
-		return [...list].sort((a, b) => {
-			const as = starred.has(a) ? 0 : 1;
-			const bs = starred.has(b) ? 0 : 1;
-			if (as !== bs) return as - bs;
-			return a.localeCompare(b);
-		});
-	}, [
-		models,
-		q,
-		settings.llmStarred
-	]);
-	const connect = async () => {
+	}, [settings.llmBase, settings.llmKey]);
+	const connect = async (override) => {
+		const u = (override?.url ?? url).trim();
+		const k = override?.key ?? key;
 		setBusy(true);
 		setErr("");
 		try {
-			const list = await fetchLlmModels(url, key);
-			const nextModel = settings.llmModel && list.includes(settings.llmModel) ? settings.llmModel : list[0] || settings.llmModel;
-			const starred = settings.llmStarred.filter((id) => list.includes(id) || id === nextModel);
+			const list = await fetchLlmModels(u, k);
+			const live = useApp.getState().settings;
+			const nextModel = override?.model || live.llmModel || list[0] || "";
+			const keepStars = override?.starred ?? live.llmStarred;
+			const starred = list.length ? pruneStarred(keepStars, list, nextModel) : [...new Set(keepStars)];
+			const nextIdentity = llmIdentity(u, k);
+			const prevIdentity = live.llmIdentity || (live.llmConnected ? llmIdentity(live.llmBase, live.llmKey) : "");
 			useApp.getState().setSettings({
-				llmBase: url,
-				llmKey: key,
+				llmBase: u,
+				llmKey: k,
 				llmConnected: true,
 				llmModels: list,
 				llmModel: nextModel,
 				llmStarred: starred,
-				chatSource: "api"
+				chatSource: "api",
+				llmAccounts: snapshotLlmAccount(live.llmAccounts ?? [], u, k, starred, nextModel),
+				llmIdentity: nextIdentity
 			});
-			useApp.getState().toast(list.length ? `已连接 · ${list.length} 个模型` : "已连接，请手填模型名");
+			if (prevIdentity && prevIdentity !== nextIdentity) useApp.getState().clearImageAi();
+			useApp.getState().toast(override?.toast ?? (list.length ? `已连接 · ${list.length} 个模型` : "已连接，请手填模型名"));
 		} catch (e) {
 			setErr(e instanceof Error ? e.message : "连接失败");
 			useApp.getState().setSettings({
-				llmBase: url,
-				llmKey: key,
+				llmBase: u,
+				llmKey: k,
 				llmConnected: false
 			});
 		} finally {
@@ -4162,26 +4760,44 @@ function ApiSettingsModal({ open, onClose }) {
 		setKey("");
 		useApp.getState().toast("已断开 API");
 	};
-	const toggleStar = (id) => {
-		const llmStarred = settings.llmStarred.includes(id) ? settings.llmStarred.filter((x) => x !== id) : [...settings.llmStarred, id];
-		useApp.getState().setSettings({ llmStarred });
-	};
-	const pick = (id) => {
-		useApp.getState().setSettings({
-			llmModel: id,
-			chatSource: "api"
-		});
+	const saveAccount = () => {
+		const name = uniqueNumberedName(saveName, (settings.llmAccounts ?? []).map((a) => a.name));
+		if (!saveName.trim()) {
+			useApp.getState().toast("请输入名称");
+			return;
+		}
+		useApp.getState().setSettings({ llmAccounts: [...settings.llmAccounts ?? [], {
+			id: uid("acc_"),
+			name,
+			base: url.trim(),
+			key,
+			starred: [...settings.llmStarred],
+			model: settings.llmModel
+		}] });
+		useApp.getState().toast(`已保存（${name}）`);
+		setSaveOpen(false);
+		setSaveName("");
 	};
 	const p = settings.llmParams;
-	if (!open) return null;
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Modal, {
-		open: true,
-		onClose,
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SheetCard, {
 		title: "API 设置",
+		onClose,
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "mb-1 text-[14px] font-medium",
-				children: "网址"
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mb-1 flex items-center justify-between text-[14px] font-medium",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "网址" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					className: "text-[12px] font-normal text-muted",
+					onClick: () => {
+						if (!url.trim() || !key.trim()) {
+							useApp.getState().toast("请填写网址和密钥");
+							return;
+						}
+						setSaveName("");
+						setSaveOpen(true);
+					},
+					children: "保存"
+				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
 				value: url,
@@ -4192,19 +4808,31 @@ function ApiSettingsModal({ open, onClose }) {
 				className: "mb-3 mt-1 text-[11px] text-muted",
 				children: "OpenAI 兼容。末尾 /v1 即可，不必写到 chat/completions。"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "mb-1 flex items-center justify-between text-[14px] font-medium",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "API 密钥" }), settings.llmConnected && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-					className: "text-[12px] font-normal text-muted",
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AccountPicker, {
+				accounts: settings.llmAccounts ?? [],
+				keyValue: key,
+				onKeyChange: setKey,
+				busy,
+				exit: settings.llmConnected ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					className: "text-[12px] text-muted",
 					onClick: disconnect,
 					children: "退出"
-				})]
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
-				type: "password",
-				value: key,
-				placeholder: "",
-				onChange: (e) => setKey(e.target.value)
+				}) : null,
+				onPick: (a) => {
+					const s = useApp.getState().settings;
+					if (s.llmBase || s.llmKey) useApp.getState().setSettings({ llmAccounts: snapshotLlmAccount(s.llmAccounts ?? [], s.llmBase, s.llmKey, s.llmStarred, s.llmModel) });
+					setUrl(a.base);
+					setKey(a.key);
+					connect({
+						url: a.base,
+						key: a.key,
+						starred: a.starred,
+						model: a.model,
+						toast: `已应用密钥（${a.name}）`
+					});
+				},
+				onDelete: (id) => useApp.getState().setSettings({ llmAccounts: (settings.llmAccounts ?? []).filter((a) => a.id !== id) })
 			}),
 			err && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 				className: "mt-2 text-[12px] text-danger",
@@ -4224,37 +4852,24 @@ function ApiSettingsModal({ open, onClose }) {
 				className: "mb-2 text-[11px] text-muted",
 				children: "列表来自接口。点选即当前模型，星标会进聊天顶栏。"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
-				value: q,
-				placeholder: "搜索",
-				onChange: (e) => setQ(e.target.value)
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ModelPicker, {
+				models: settings.llmModels,
+				current: settings.llmModel,
+				starred: settings.llmStarred,
+				connected: settings.llmConnected,
+				onPick: (id) => {
+					useApp.getState().setSettings(applyLlmPick(settings, id));
+				},
+				onStar: (id) => {
+					const next = settings.llmStarred.includes(id) ? settings.llmStarred.filter((x) => x !== id) : [...settings.llmStarred, id];
+					const llmStarred = pruneStarred(next, settings.llmModels, settings.llmModel);
+					useApp.getState().setSettings({
+						llmStarred,
+						llmAccounts: snapshotLlmAccount(settings.llmAccounts ?? [], settings.llmBase, settings.llmKey, llmStarred, settings.llmModel)
+					});
+				}
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "mt-2 max-h-[36vh] overflow-auto rounded-[18px] border border-line bg-card scroll-thin",
-				children: filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					className: "px-4 py-6 text-center text-[13px] text-muted",
-					children: settings.llmConnected ? "没有匹配的模型" : "连接后才会出现列表"
-				}) : filtered.map((id) => {
-					const current = settings.llmModel === id;
-					const starred = settings.llmStarred.includes(id);
-					return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: cn("flex items-center gap-1 border-b border-line/70 last:border-0", current && "bg-dim/70"),
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							className: "min-w-0 flex-1 truncate px-3 py-3 text-left text-[13px]",
-							onClick: () => pick(id),
-							children: id
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							className: "grid size-10 shrink-0 place-items-center",
-							onClick: () => toggleStar(id),
-							"aria-label": starred ? "取消常用" : "标为常用",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: cn("size-4", starred ? "fill-primary text-primary" : "text-faint") })
-						})]
-					}, id);
-				})
-			}),
-			settings.llmConnected && models.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			settings.llmConnected && settings.llmModels.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "mt-3",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 					className: "mb-1 text-[13px]",
@@ -4266,6 +4881,7 @@ function ApiSettingsModal({ open, onClose }) {
 						placeholder: "deepseek-ai/DeepSeek-V3.2",
 						onChange: (e) => setManual(e.target.value)
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
 						className: "shrink-0 rounded-full bg-primary px-4 text-[13px] text-on-primary",
 						onClick: () => {
 							const id = manual.trim();
@@ -4285,20 +4901,27 @@ function ApiSettingsModal({ open, onClose }) {
 				children: [
 					"当前：",
 					settings.llmModel ? shortModelLabel(settings.llmModel) : "未选",
-					" · 常用 ",
-					settings.llmStarred.length
+					" · 常用",
+					" ",
+					pruneStarred(settings.llmStarred, settings.llmModels, settings.llmModel).length
 				]
 			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChatPresetPicker, {}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "mt-5 mb-2 flex items-center justify-between",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 					className: "text-[14px] font-medium",
 					children: "预设"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
 					className: "text-[12px] text-muted",
 					onClick: () => useApp.getState().setSettings({ llmParams: { ...DEFAULT_LLM_PARAMS } }),
 					children: "恢复默认"
 				})]
+			}),
+			activePreset(settings) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+				className: "mb-2 text-[11px] text-muted",
+				children: ["采样来自：", activePreset(settings)?.name]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ParamRow, {
 				label: "温度",
@@ -4367,8 +4990,509 @@ function ApiSettingsModal({ open, onClose }) {
 					...p,
 					contextTurns: n
 				} })
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Modal, {
+				open: saveOpen,
+				onClose: () => setSaveOpen(false),
+				title: "保存账号",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
+					value: saveName,
+					placeholder: "给这组起个名字",
+					onChange: (e) => setSaveName(e.target.value),
+					onKeyDown: (e) => {
+						if (e.key === "Enter") saveAccount();
+					}
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PrimaryBtn, {
+					className: "mt-4",
+					onClick: saveAccount,
+					children: "保存"
+				})]
 			})
 		]
+	});
+}
+function applyStPreset(preset) {
+	const s = useApp.getState().settings;
+	const snapshot = s.stParamSnapshot ?? { ...s.llmParams };
+	useApp.getState().setSettings({
+		stActiveId: preset.id,
+		stParamSnapshot: snapshot,
+		llmParams: samplerPatch(preset.params, s.llmParams)
+	});
+	useApp.getState().toast(`已应用预设（${preset.name}）`);
+}
+function cancelStPreset() {
+	const s = useApp.getState().settings;
+	useApp.getState().setSettings({
+		stActiveId: null,
+		stParamSnapshot: null,
+		llmParams: restoreSampler(s.stParamSnapshot, s.llmParams)
+	});
+	useApp.getState().toast("已取消预设");
+}
+function ChatPresetPicker() {
+	const settings = useApp((s) => s.settings);
+	const presets = settings.stPresets ?? [];
+	const active = activePreset(settings);
+	const fileRef = (0, import_react.useRef)(null);
+	const [open, setOpen] = (0, import_react.useState)(false);
+	const [pos, setPos] = (0, import_react.useState)(null);
+	const box = (0, import_react.useRef)(null);
+	const menu = (0, import_react.useRef)(null);
+	const place = () => {
+		const el = box.current;
+		if (!el) return;
+		const r = el.getBoundingClientRect();
+		const width = Math.min(r.width, window.innerWidth - 16);
+		const left = Math.min(Math.max(8, r.left), window.innerWidth - width - 8);
+		const top = r.bottom + 4;
+		const maxH = Math.min(260, Math.max(120, window.innerHeight - top - 12));
+		setPos({
+			top,
+			left,
+			width,
+			maxH
+		});
+	};
+	const openMenu = () => {
+		place();
+		setOpen(true);
+	};
+	(0, import_react.useEffect)(() => {
+		if (!open) return;
+		place();
+		let start = null;
+		let downOutside = false;
+		let moved = false;
+		const inChrome = (t) => {
+			const n = t;
+			return Boolean(n && (box.current?.contains(n) || menu.current?.contains(n)));
+		};
+		const onDown = (e) => {
+			start = {
+				x: e.clientX,
+				y: e.clientY
+			};
+			downOutside = !inChrome(e.target);
+			moved = false;
+		};
+		const onMove = (e) => {
+			if (!start) return;
+			if (Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y) > 10) moved = true;
+		};
+		const onUp = (e) => {
+			if (downOutside && !moved && !inChrome(e.target)) setOpen(false);
+			start = null;
+		};
+		window.addEventListener("pointerdown", onDown, true);
+		window.addEventListener("pointermove", onMove, true);
+		window.addEventListener("pointerup", onUp, true);
+		window.addEventListener("resize", place);
+		window.addEventListener("scroll", place, true);
+		return () => {
+			window.removeEventListener("pointerdown", onDown, true);
+			window.removeEventListener("pointermove", onMove, true);
+			window.removeEventListener("pointerup", onUp, true);
+			window.removeEventListener("resize", place);
+			window.removeEventListener("scroll", place, true);
+		};
+	}, [open]);
+	const importFile = async (file) => {
+		let raw;
+		try {
+			raw = JSON.parse(await file.text());
+		} catch {
+			useApp.getState().toast("无法读取这个文件");
+			return;
+		}
+		try {
+			const parsed = parseChatCompletionPreset(raw, file.name);
+			const s = useApp.getState().settings;
+			const name = uniquePresetName(parsed.name, (s.stPresets ?? []).map((p) => p.name));
+			useApp.getState().setSettings({ stPresets: [...s.stPresets ?? [], {
+				...parsed,
+				name
+			}] });
+			useApp.getState().toast(`已导入 ${name}，点列表应用`);
+		} catch (e) {
+			useApp.getState().toast(e instanceof Error ? e.message : "这不是对话补全预设");
+		}
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "mt-5",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "mb-2 flex items-center gap-2",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "min-w-0 flex-1 text-[14px] font-medium",
+					children: "对话补全预设"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+					ref: fileRef,
+					type: "file",
+					accept: ".json,application/json",
+					className: "hidden",
+					onChange: (e) => {
+						const f = e.target.files?.[0];
+						e.target.value = "";
+						if (f) importFile(f);
+					}
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					className: "grid size-8 shrink-0 place-items-center text-muted",
+					"aria-label": "导入预设",
+					onClick: () => fileRef.current?.click(),
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileUp, { className: "size-4" })
+				}),
+				active ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+					className: "flex shrink-0 items-center gap-2 text-[12px]",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+						className: "inline-flex items-center gap-1 text-good",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "size-3.5" }), "已应用"]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						className: "text-muted",
+						onClick: cancelStPreset,
+						children: "取消"
+					})]
+				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+					className: "inline-flex shrink-0 items-center gap-1 text-[12px] text-danger",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "size-3.5" }), "未应用"]
+				})
+			]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			ref: box,
+			className: "relative",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex h-11 items-center rounded-full border border-line bg-card pl-4 pr-1",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					className: "min-w-0 flex-1 truncate text-left text-[13px]",
+					onClick: () => open ? setOpen(false) : openMenu(),
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: active ? "text-ink" : "text-muted",
+						children: active ? active.name : "未应用"
+					})
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					className: "grid size-9 shrink-0 place-items-center text-muted",
+					"aria-label": open ? "收起预设列表" : "展开预设列表",
+					onClick: () => open ? setOpen(false) : openMenu(),
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: cn("size-4 transition", open && "rotate-180") })
+				})]
+			}), open && pos && (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				ref: menu,
+				className: "fixed z-[85] overflow-hidden rounded-[16px] border border-line bg-card shadow-[0_16px_40px_rgb(44_40_36/0.16)]",
+				style: {
+					top: pos.top,
+					left: pos.left,
+					width: pos.width
+				},
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "overflow-auto overscroll-contain scroll-hide",
+					style: { maxHeight: pos.maxH },
+					children: presets.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "px-4 py-6 text-center text-[13px] text-muted",
+						children: "还没有导入的预设"
+					}) : presets.map((p) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-1 border-b border-line/70 last:border-0",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: cn("min-w-0 flex-1 truncate px-3 py-3 text-left text-[13px]", p.id === active?.id && "text-primary"),
+							onClick: () => {
+								applyStPreset(p);
+								setOpen(false);
+							},
+							children: p.name
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: "grid size-10 shrink-0 place-items-center text-danger",
+							"aria-label": `删除${p.name}`,
+							onClick: () => {
+								const s = useApp.getState().settings;
+								const was = s.stActiveId === p.id;
+								const next = (s.stPresets ?? []).filter((x) => x.id !== p.id);
+								if (was) {
+									useApp.getState().setSettings({
+										stPresets: next,
+										stActiveId: null,
+										stParamSnapshot: null,
+										llmParams: restoreSampler(s.stParamSnapshot, s.llmParams)
+									});
+									useApp.getState().toast("已取消预设");
+								} else useApp.getState().setSettings({ stPresets: next });
+							},
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "size-4" })
+						})]
+					}, p.id))
+				})
+			}), document.body)]
+		})]
+	});
+}
+function AccountPicker({ accounts, keyValue, onKeyChange, busy, exit, onPick, onDelete }) {
+	const [open, setOpen] = (0, import_react.useState)(false);
+	const [pos, setPos] = (0, import_react.useState)(null);
+	const box = (0, import_react.useRef)(null);
+	const menu = (0, import_react.useRef)(null);
+	const place = () => {
+		const el = box.current;
+		if (!el) return;
+		const r = el.getBoundingClientRect();
+		const width = Math.min(r.width, window.innerWidth - 16);
+		const left = Math.min(Math.max(8, r.left), window.innerWidth - width - 8);
+		const top = r.bottom + 4;
+		const maxH = Math.min(260, Math.max(120, window.innerHeight - top - 12));
+		setPos({
+			top,
+			left,
+			width,
+			maxH
+		});
+	};
+	const openMenu = () => {
+		place();
+		setOpen(true);
+	};
+	(0, import_react.useEffect)(() => {
+		if (!open) return;
+		place();
+		let start = null;
+		let downOutside = false;
+		let moved = false;
+		const inChrome = (t) => {
+			const n = t;
+			return Boolean(n && (box.current?.contains(n) || menu.current?.contains(n)));
+		};
+		const onDown = (e) => {
+			start = {
+				x: e.clientX,
+				y: e.clientY
+			};
+			downOutside = !inChrome(e.target);
+			moved = false;
+		};
+		const onMove = (e) => {
+			if (!start) return;
+			if (Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y) > 10) moved = true;
+		};
+		const onUp = (e) => {
+			if (downOutside && !moved && !inChrome(e.target)) setOpen(false);
+			start = null;
+		};
+		window.addEventListener("pointerdown", onDown, true);
+		window.addEventListener("pointermove", onMove, true);
+		window.addEventListener("pointerup", onUp, true);
+		window.addEventListener("resize", place);
+		window.addEventListener("scroll", place, true);
+		return () => {
+			window.removeEventListener("pointerdown", onDown, true);
+			window.removeEventListener("pointermove", onMove, true);
+			window.removeEventListener("pointerup", onUp, true);
+			window.removeEventListener("resize", place);
+			window.removeEventListener("scroll", place, true);
+		};
+	}, [open]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		ref: box,
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mb-1 flex items-center justify-between gap-2 text-[14px] font-medium",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "API 密钥" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+					className: "flex shrink-0 items-center gap-3 text-[12px] font-normal",
+					children: [exit, /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						className: "text-muted",
+						onClick: () => open ? setOpen(false) : openMenu(),
+						children: "账号列表"
+					})]
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
+				type: "password",
+				value: keyValue,
+				placeholder: "",
+				onChange: (e) => onKeyChange(e.target.value)
+			}),
+			open && pos && (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				ref: menu,
+				className: "fixed z-[85] overflow-hidden rounded-[16px] border border-line bg-card shadow-[0_16px_40px_rgb(44_40_36/0.16)]",
+				style: {
+					top: pos.top,
+					left: pos.left,
+					width: pos.width
+				},
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "overflow-auto overscroll-contain scroll-hide",
+					style: { maxHeight: pos.maxH },
+					children: accounts.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "px-4 py-6 text-center text-[13px] text-muted",
+						children: "还没有保存的账号"
+					}) : accounts.map((a) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-1 border-b border-line/70 last:border-0",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: "min-w-0 flex-1 truncate px-3 py-3 text-left text-[13px]",
+							disabled: busy,
+							onClick: () => {
+								onPick(a);
+								setOpen(false);
+							},
+							children: a.name
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: "grid size-10 shrink-0 place-items-center text-danger",
+							"aria-label": `删除${a.name}`,
+							onClick: () => onDelete(a.id),
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "size-4" })
+						})]
+					}, a.id))
+				})
+			}), document.body)
+		]
+	});
+}
+function ModelPicker({ models, current, starred, connected, onPick, onStar }) {
+	const [open, setOpen] = (0, import_react.useState)(false);
+	const [q, setQ] = (0, import_react.useState)("");
+	const [pos, setPos] = (0, import_react.useState)(null);
+	const box = (0, import_react.useRef)(null);
+	const menu = (0, import_react.useRef)(null);
+	const filtered = (0, import_react.useMemo)(() => {
+		const t = q.trim().toLowerCase();
+		const list = t ? models.filter((id) => id.toLowerCase().includes(t)) : models;
+		const star = new Set(starred);
+		return [...list].sort((a, b) => {
+			const as = star.has(a) ? 0 : 1;
+			const bs = star.has(b) ? 0 : 1;
+			if (as !== bs) return as - bs;
+			return a.localeCompare(b);
+		});
+	}, [
+		models,
+		q,
+		starred
+	]);
+	const place = () => {
+		const el = box.current;
+		if (!el) return;
+		const r = el.getBoundingClientRect();
+		const width = Math.min(r.width, window.innerWidth - 16);
+		const left = Math.min(Math.max(8, r.left), window.innerWidth - width - 8);
+		const top = r.bottom + 4;
+		const maxH = Math.min(260, Math.max(120, window.innerHeight - top - 12));
+		setPos({
+			top,
+			left,
+			width,
+			maxH
+		});
+	};
+	const openMenu = () => {
+		place();
+		setOpen(true);
+	};
+	(0, import_react.useEffect)(() => {
+		if (!open) return;
+		place();
+		let start = null;
+		let downOutside = false;
+		let moved = false;
+		const inChrome = (t) => {
+			const n = t;
+			return Boolean(n && (box.current?.contains(n) || menu.current?.contains(n)));
+		};
+		const onDown = (e) => {
+			start = {
+				x: e.clientX,
+				y: e.clientY
+			};
+			downOutside = !inChrome(e.target);
+			moved = false;
+		};
+		const onMove = (e) => {
+			if (!start) return;
+			if (Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y) > 10) moved = true;
+		};
+		const onUp = (e) => {
+			if (downOutside && !moved && !inChrome(e.target)) setOpen(false);
+			start = null;
+		};
+		window.addEventListener("pointerdown", onDown, true);
+		window.addEventListener("pointermove", onMove, true);
+		window.addEventListener("pointerup", onUp, true);
+		window.addEventListener("resize", place);
+		window.addEventListener("scroll", place, true);
+		return () => {
+			window.removeEventListener("pointerdown", onDown, true);
+			window.removeEventListener("pointermove", onMove, true);
+			window.removeEventListener("pointerup", onUp, true);
+			window.removeEventListener("resize", place);
+			window.removeEventListener("scroll", place, true);
+		};
+	}, [open]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		ref: box,
+		className: "relative",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "flex h-12 items-center rounded-full border border-line bg-card focus-within:border-primary/40",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+				value: q,
+				placeholder: "搜索",
+				className: "min-w-0 flex-1 bg-transparent px-4 text-[14px] outline-none placeholder:text-faint",
+				onChange: (e) => {
+					setQ(e.target.value);
+					if (!open) openMenu();
+				},
+				onFocus: () => {
+					if (!open) openMenu();
+				}
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				type: "button",
+				className: "grid size-11 shrink-0 place-items-center",
+				"aria-label": open ? "收起模型列表" : "展开模型列表",
+				onClick: () => open ? setOpen(false) : openMenu(),
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: cn("size-4 text-muted transition", open && "rotate-180") })
+			})]
+		}), open && pos && (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			ref: menu,
+			className: "fixed z-[85] overflow-hidden rounded-[16px] border border-line bg-card shadow-[0_16px_40px_rgb(44_40_36/0.16)]",
+			style: {
+				top: pos.top,
+				left: pos.left,
+				width: pos.width
+			},
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "overflow-auto overscroll-contain scroll-hide",
+				style: { maxHeight: pos.maxH },
+				children: filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "px-4 py-6 text-center text-[13px] text-muted",
+					children: connected ? "没有匹配的模型" : "连接后才会出现列表"
+				}) : filtered.map((id) => {
+					const on = current === id;
+					const star = starred.includes(id);
+					return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: cn("flex items-center gap-1 border-b border-line/70 last:border-0", on && "bg-dim/70"),
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: "min-w-0 flex-1 truncate px-3 py-3 text-left text-[13px]",
+							onClick: () => {
+								onPick(id);
+								setOpen(false);
+							},
+							children: id
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: "grid size-10 shrink-0 place-items-center",
+							onClick: () => onStar(id),
+							"aria-label": star ? "取消常用" : "标为常用",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: cn("size-4", star ? "fill-primary text-primary" : "text-faint") })
+						})]
+					}, id);
+				})
+			})
+		}), document.body)]
 	});
 }
 function ParamRow({ label, value, min, max, step, digits = 2, onChange }) {
@@ -4823,17 +5947,29 @@ function scrollJump(jump) {
 function ParamsPane({ chat, mode = "chat" }) {
 	const live = chat.imageParams;
 	const [peek, setPeek] = (0, import_react.useState)(null);
-	const p = peek ?? live;
+	const p = peek ? {
+		...peek,
+		characters: live.characters,
+		useCoords: live.useCoords
+	} : live;
 	const commit = (partial) => {
 		if (mode === "pure") useApp.getState().setPureParams(partial);
 		else useApp.getState().patchParams(chat.id, partial);
 	};
 	const patch = (partial) => {
-		if (peek) setPeek((prev) => prev ? {
-			...prev,
-			...partial
-		} : prev);
-		else commit(partial);
+		if (peek) {
+			const { characters, useCoords, ...rest } = partial;
+			if (characters !== void 0 || useCoords !== void 0) commit({
+				...characters !== void 0 ? { characters } : {},
+				...useCoords !== void 0 ? { useCoords } : {}
+			});
+			if (Object.keys(rest).length) setPeek((prev) => prev ? {
+				...prev,
+				...rest
+			} : prev);
+			return;
+		}
+		commit(partial);
 	};
 	const v3 = naiFamily(p.model) === "v3";
 	const hideSplit = mode === "pure" && p.merged;
@@ -4842,12 +5978,8 @@ function ParamsPane({ chat, mode = "chat" }) {
 	const previewRef = (0, import_react.useRef)(null);
 	const chatId = chat.id;
 	const pickAppearance = (target, a) => {
-		if (peek) {
-			if (target === "mid") patch({ promptMid: a.prompt });
-			else patch({ characters: p.characters.map((x) => x.id === target ? {
-				...x,
-				prompt: a.prompt
-			} : x) });
+		if (peek && target === "mid") {
+			patch({ promptMid: a.prompt });
 			return;
 		}
 		useApp.getState().applyAppearance(chat.id, a, target);
@@ -4911,13 +6043,18 @@ function ParamsPane({ chat, mode = "chat" }) {
 		className: mode === "pure" ? "mx-auto max-w-lg px-4 pb-10 pt-1" : "mx-auto h-full max-w-lg overflow-y-auto px-4 pb-24 pt-3 scroll-thin",
 		children: [
 			mode === "chat" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "mt-1 text-[11px] tracking-[0.16em] text-muted",
-					children: "CHAT IMAGE"
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-					className: "font-serif text-2xl",
-					children: "聊天配图参数"
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-start justify-between gap-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "min-w-0",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "mt-1 text-[11px] tracking-[0.16em] text-muted",
+							children: "CHAT IMAGE"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+							className: "font-serif text-2xl",
+							children: "聊天配图参数"
+						})]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ImageAiPicker, { chat })]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 					className: "mb-3 mt-1 text-[12px] text-muted",
@@ -4944,6 +6081,10 @@ function ParamsPane({ chat, mode = "chat" }) {
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PreviewParamsDrawer, {
 						currentId: chatId,
 						onPeek: (id) => {
+							if (id === chatId) {
+								setPeek(null);
+								return;
+							}
 							const src = useApp.getState().chats.find((c) => c.id === id);
 							if (!src) return;
 							setPeek(structuredClone(src.imageParams));
@@ -4951,7 +6092,8 @@ function ParamsPane({ chat, mode = "chat" }) {
 						onApply: (id) => {
 							const src = useApp.getState().chats.find((c) => c.id === id);
 							if (!src) return;
-							useApp.getState().patchParams(chatId, structuredClone(src.imageParams));
+							const { characters: _c, useCoords: _u, ...rest } = structuredClone(src.imageParams);
+							useApp.getState().patchParams(chatId, rest);
 							setPeek(null);
 							useApp.getState().setUI({ previewParams: false });
 							useApp.getState().toast("已套用参数");
@@ -5291,6 +6433,21 @@ function ParamsPane({ chat, mode = "chat" }) {
 						useCoords: p.useCoords,
 						onChange: (next) => patch({ characters: p.characters.map((x) => x.id === ch.id ? next : x) }),
 						onPick: (a) => pickAppearance(ch.id, a),
+						onApplyLook: mode === "chat" ? () => {
+							const role = chat.characters.find((c) => c.id === ch.id) ?? chat.characters[i];
+							if (!role) {
+								useApp.getState().toast("没有对应人设");
+								return;
+							}
+							useApp.getState().patchChat(chat.id, (c) => ({
+								...c,
+								characters: c.characters.map((x) => x.id === role.id ? {
+									...x,
+									appearance: ch.prompt
+								} : x)
+							}));
+							useApp.getState().toast("已写入外貌备忘");
+						} : void 0,
 						onRemove: p.characters.length > 1 ? () => useApp.getState().setUI({ confirm: {
 							title: "删除角色",
 							body: `删除「${ch.name || `角色${i + 1}`}」的提示词栏？`,
@@ -5317,7 +6474,7 @@ function ParamsPane({ chat, mode = "chat" }) {
 		]
 	});
 }
-function CharCard({ ch, index, chatName, suggest, useCoords, onChange, onPick, onRemove }) {
+function CharCard({ ch, index, chatName, suggest, useCoords, onChange, onPick, onApplyLook, onRemove }) {
 	const title = `角色${index + 1}:${ch.name || chatName || ""}`;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
 		className: "mb-3 overflow-visible",
@@ -5325,14 +6482,23 @@ function CharCard({ ch, index, chatName, suggest, useCoords, onChange, onPick, o
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "mb-2 flex items-center justify-between gap-2",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "text-[15px] font-semibold",
+					className: "min-w-0 flex-1 truncate text-[15px] font-semibold",
 					children: title
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
-					on: ch.enabled,
-					onChange: (v) => onChange({
-						...ch,
-						enabled: v
-					})
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex shrink-0 items-center gap-1",
+					children: [onRemove && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						className: "grid size-8 place-items-center text-danger",
+						onClick: onRemove,
+						"aria-label": "删除角色",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "size-4" })
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
+						on: ch.enabled,
+						onChange: (v) => onChange({
+							...ch,
+							enabled: v
+						})
+					})]
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -5340,12 +6506,11 @@ function CharCard({ ch, index, chatName, suggest, useCoords, onChange, onPick, o
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AppearSelect, {
 					className: "min-w-0 flex-1",
 					onPick
-				}), onRemove && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				}), onApplyLook && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 					type: "button",
-					className: "grid size-8 shrink-0 place-items-center text-danger",
-					onClick: onRemove,
-					"aria-label": "删除角色",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "size-4" })
+					className: "mb-0 h-9 shrink-0 rounded-full border border-line px-3 text-[13px] text-primary",
+					onClick: onApplyLook,
+					children: "应用"
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
@@ -5418,33 +6583,150 @@ function AppearSelect({ className, onPick }) {
 		onReorder: (ids) => useApp.getState().reorderAppearances(ids)
 	});
 }
+function ImageAiPicker({ chat }) {
+	const source = useApp((s) => s.settings.chatSource);
+	const llmModel = useApp((s) => s.settings.llmModel);
+	const starred = useApp((s) => s.settings.llmStarred);
+	const available = useApp((s) => s.settings.llmModels);
+	const ids = imagePickerModels({
+		chatSource: source,
+		llmStarred: starred,
+		llmModels: available,
+		llmModel,
+		imageModelId: chat.imageModelId,
+		imageModelPin: chat.imageModelPin
+	});
+	const value = chat.imageModelId || "__follow__";
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "shrink-0 pt-1 text-right",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "text-[11px] tracking-[0.16em] text-muted",
+				children: "配图 AI"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "mt-1 inline-flex rounded-full border border-line bg-card",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExpandSelect, {
+					value: ids.includes(value) ? value : FOLLOW_IMAGE_AI,
+					options: ids.map((id) => ({
+						id,
+						label: imageAiLabel(id),
+						short: imageAiLabel(id)
+					})),
+					onChange: (id) => useApp.getState().patchChat(chat.id, applyImageAiPick(chat, id)),
+					align: "left",
+					menu: "end"
+				})
+			}),
+			chat.imageModelId ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+				className: "mt-1 max-w-[11rem] text-[11px] leading-4 text-muted",
+				children: ["对白用顶栏，提示词用 ", imageAiLabel(chat.imageModelId)]
+			}) : null
+		]
+	});
+}
+function chatSnippet(c) {
+	const lastMsg = [...c.messages].reverse().find((m) => m.content);
+	return (c.remark || (lastMsg && lastMsg.role !== "user" ? replyStoryText(lastMsg.content) || lastMsg.content : lastMsg?.content) || c.opening || "新的对话").replace(/\s+/g, " ");
+}
 function PreviewParamsDrawer({ currentId, onPeek, onApply }) {
 	const open = useApp((s) => s.ui.previewParams);
 	const { foldersSorted, root, inFolder } = listedChats(useApp((s) => s.folders), useApp((s) => s.chats));
+	const [folderId, setFolderId] = (0, import_react.useState)(null);
+	const [peekId, setPeekId] = (0, import_react.useState)(null);
+	(0, import_react.useEffect)(() => {
+		if (!open) {
+			setFolderId(null);
+			setPeekId(null);
+		}
+	}, [open]);
 	if (!open) return null;
-	const row = (c) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-		type: "button",
-		className: `flex w-full items-center gap-2 rounded-[14px] px-2 py-2 text-left ${c.id === currentId ? "bg-dim" : "hover:bg-dim"}`,
-		onPointerEnter: () => onPeek(c.id),
-		onClick: () => onApply(c.id),
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Avatar, {
-			url: cachedUrl(c.avatarBlobId),
-			name: c.name,
-			size: 28
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-			className: "min-w-0 flex-1 truncate text-[13px]",
-			children: c.name || "未命名"
-		})]
-	}, c.id);
+	const folder = folderId ? foldersSorted.find((f) => f.id === folderId) : void 0;
+	const list = folderId ? inFolder(folderId) : root;
+	const marked = peekId ?? currentId;
+	const peekChat = (c) => {
+		setPeekId(c.id);
+		onPeek(c.id);
+	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "absolute left-0 right-0 top-[calc(100%+6px)] z-30 max-h-72 overflow-y-auto rounded-[18px] border border-line bg-card p-2 shadow-lg",
-		children: [root.map(row), foldersSorted.map((f) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "mt-1",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex items-center gap-1 px-2 py-1 text-[11px] text-muted",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Folder, { className: "size-3.5" }), f.name || "文件夹"]
-			}), inFolder(f.id).map(row)]
-		}, f.id))]
+		className: "absolute left-0 right-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-[18px] border border-line bg-card shadow-[0_16px_40px_rgb(44_40_36/0.16)]",
+		children: [folder && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+			type: "button",
+			className: "flex h-10 w-full items-center gap-1 px-3 text-[13px] text-ink",
+			onClick: () => setFolderId(null),
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronLeft, { className: "size-4 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				className: "truncate",
+				children: folder.name || "文件夹"
+			})]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "overflow-y-auto scroll-thin overscroll-contain",
+			style: { maxHeight: "21rem" },
+			children: [
+				!folderId && foldersSorted.map((f) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+					type: "button",
+					className: "flex h-14 w-full items-center gap-3 px-3 text-left",
+					onClick: () => setFolderId(f.id),
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex size-10 shrink-0 items-center justify-center rounded-full border border-line text-primary",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Folder, { className: "size-4" })
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "min-w-0 flex-1",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-1 truncate text-[14px] font-medium",
+								children: [f.starred && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: "size-3 fill-primary text-primary" }), f.name || "文件夹"]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "text-[12px] text-muted",
+								children: [inFolder(f.id).length, " 项"]
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronRight, { className: "size-4 shrink-0 text-muted" })
+					]
+				}, f.id)),
+				list.map((c) => {
+					const current = c.id === currentId;
+					return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: cn("flex h-14 items-center gap-2 px-3", marked === c.id && "bg-dim"),
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							className: "flex min-w-0 flex-1 items-center gap-3 text-left",
+							onClick: () => peekChat(c),
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Avatar, {
+								url: cachedUrl(c.avatarBlobId),
+								name: c.name,
+								size: 40
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "min-w-0 flex-1",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-1 truncate text-[14px] font-medium",
+									children: [c.starred && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: "size-3 fill-primary text-primary" }), c.name || "未命名"]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "truncate text-[12px] text-muted",
+									children: chatSnippet(c)
+								})]
+							})]
+						}), current ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "shrink-0 px-1 text-[12px] text-muted",
+							children: "当前"
+						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: "shrink-0 px-1 text-[13px] text-primary",
+							onClick: () => onApply(c.id),
+							children: "应用"
+						})]
+					}, c.id);
+				}),
+				!folderId && foldersSorted.length === 0 && root.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "px-3 py-4 text-center text-[12px] text-muted",
+					children: "还没有其他角色"
+				}),
+				folderId && list.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "px-3 py-4 text-center text-[12px] text-muted",
+					children: "文件夹是空的"
+				})
+			]
+		})]
 	});
 }
 function LabeledSlider({ label, value, min, max, step, locked, onLock, onChange }) {
@@ -5725,7 +7007,10 @@ function PurePane() {
 						children: samplerLabel(item.sampler)
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-						onClick: () => jump("seed"),
+						onClick: () => {
+							useApp.getState().setPureParams({ seed: item.seed });
+							jump("seed");
+						},
 						children: item.seed
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
@@ -6231,6 +7516,7 @@ function RoleEditor({ chat, mode }) {
 	const polishJob = useApp((s) => s.ui.polishJob);
 	const busyRef = (0, import_react.useRef)(false);
 	const locked = !!busy;
+	const memTurns = memoryTurnStats(chat.messages.length, chat.memoryUntil);
 	const fieldBusyLabel = busy?.kind === "field" ? FIELD_LABELS[busy.key] || busy.key : "";
 	const syncChars = (characters, isMulti = chat.isMulti) => patch({
 		characters,
@@ -6312,7 +7598,7 @@ function RoleEditor({ chat, mode }) {
 		}));
 		useApp.getState().commitChat(chat.id);
 		if (mode === "create") {
-			const { sendOpening } = await import("./chat-actions-Ci360qiM.mjs");
+			const { sendOpening } = await import("./chat-actions-FC9VUIU_.mjs");
 			sendOpening(chat.id);
 		} else useApp.getState().toast("设定已保存");
 	};
@@ -6540,6 +7826,22 @@ function RoleEditor({ chat, mode }) {
 				className: "mb-3",
 				children: [
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldLabel, {
+						sub: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "text-[11px] text-muted",
+							children: [
+								"（已对话 ",
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-good",
+									children: memTurns.spoken
+								}),
+								" 轮，已总结到第 ",
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-good",
+									children: memTurns.folded
+								}),
+								" 轮）"
+							]
+						}),
 						hint: "聊久了会把更早的剧情压成备忘，下一轮当事实用。聊天里看不见。可改、可重总结、可清空。",
 						children: "长期记忆"
 					}),
@@ -6547,29 +7849,54 @@ function RoleEditor({ chat, mode }) {
 						className: "min-h-[120px]",
 						value: chat.memory,
 						placeholder: "还没有长期记忆。对话变长后会自动整理。",
-						onChange: (e) => patch({ memory: e.target.value })
+						onChange: (e) => {
+							const text = e.target.value;
+							const snaps = chat.memorySnaps ?? [];
+							const last = snaps[snaps.length - 1];
+							patch({
+								memory: text,
+								memorySnaps: last ? [...snaps.slice(0, -1), {
+									...last,
+									text
+								}] : text ? [{
+									covered: chat.memoryUntil || 0,
+									text,
+									foldAt: chat.memoryFoldAt || 0
+								}] : []
+							});
+						}
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "mt-2 flex gap-2",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(GhostBtn, {
-								className: "h-10 text-[13px]",
+								className: "h-10 w-auto min-w-0 flex-1 whitespace-nowrap px-3 text-[13px]",
 								onClick: () => useApp.getState().toast("已保存"),
 								children: "保存"
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(GhostBtn, {
-								className: "h-10 text-[13px]",
+								className: "h-10 w-auto min-w-0 flex-1 whitespace-nowrap px-3 text-[13px]",
 								onClick: async () => {
 									if (locked) return;
 									setBusy({ kind: "mem" });
 									try {
-										const { summarizeMemory } = await import("../_libs/_.mjs").then((n) => n.n);
-										const mem = await summarizeMemory(chat, grok);
-										patch({
-											memory: mem,
-											memoryUntil: chat.messages.length
-										});
+										const { W, I } = foldWindow();
+										const n = chat.messages.length;
+										const end = foldCoveredEnd(n, W, I);
+										if (end < 2) {
+											useApp.getState().toast("还不够长，先多聊几轮");
+											return;
+										}
+										invalidateMemory(chat.id);
+										const mem = await summarizeMemory(chat, grok, chat.messages.slice(0, end), "（无）");
+										patch(applySnaps([{
+											covered: end,
+											text: mem,
+											foldAt: n
+										}]));
 										useApp.getState().toast("已重新总结");
+									} catch {
+										useApp.getState().toast("总结失败，旧备忘还在");
 									} finally {
 										setBusy(null);
 									}
@@ -6577,11 +7904,11 @@ function RoleEditor({ chat, mode }) {
 								children: busy?.kind === "mem" ? "总结中…" : "重新总结"
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(GhostBtn, {
-								className: "h-10 text-[13px]",
-								onClick: () => patch({
-									memory: "",
-									memoryUntil: 0
-								}),
+								className: "h-10 w-auto min-w-0 flex-1 whitespace-nowrap px-3 text-[13px]",
+								onClick: () => {
+									invalidateMemory(chat.id);
+									patch(emptyMemory());
+								},
 								children: "清空"
 							})
 						]
@@ -6696,6 +8023,8 @@ function FieldBlock({ label, hint, value, placeholder, onChange, onRegen, onPers
 		}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextArea, {
 			value,
 			placeholder,
+			rows: 5,
+			className: "min-h-[calc(1.5rem+5*1.625em)]",
 			onChange: (e) => onChange(e.target.value)
 		})]
 	});
@@ -6935,7 +8264,7 @@ function Sidebar() {
 						className: "flex items-start justify-between",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 							className: "font-serif text-[22px] tracking-wide",
-							children: "绘语new"
+							children: "绘语"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 							className: "mt-0.5 text-[12px] text-muted",
 							children: "角色与故事"
@@ -7164,7 +8493,8 @@ function ChatRow({ id, active, nested, dragging, dragGroup, onGripDown }) {
 	const { held, ...holdH } = useHold(id);
 	if (!chat) return null;
 	const selected = ui.selected.includes(id);
-	const last = chat.remark || [...chat.messages].reverse().find((m) => m.content)?.content || chat.opening;
+	const lastMsg = [...chat.messages].reverse().find((m) => m.content);
+	const last = chat.remark || (lastMsg && lastMsg.role !== "user" ? replyStoryText(lastMsg.content) || lastMsg.content : lastMsg?.content) || chat.opening;
 	const url = cachedUrl(chat.avatarBlobId);
 	const menu = ui.menuId === id;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -7621,6 +8951,8 @@ function MultiCreateModal() {
 			extras: [],
 			memory: "",
 			memoryUntil: 0,
+			memoryFoldAt: 0,
+			memorySnaps: [],
 			characters,
 			imageParams,
 			messages: [],
@@ -7712,7 +9044,7 @@ function MultiCreateModal() {
 					const draft = makeDraft();
 					pushDraft(draft);
 					useApp.getState().commitChat(draft.id);
-					const { sendOpening } = await import("./chat-actions-Ci360qiM.mjs");
+					const { sendOpening } = await import("./chat-actions-FC9VUIU_.mjs");
 					sendOpening(draft.id);
 				},
 				children: "跳过，开始聊天"
@@ -7727,4 +9059,4 @@ function Home() {
 	});
 }
 //#endregion
-export { modelLabel as A, recentSceneForImage as B, importArchive as C, makeImageRecord as D, makeAssistantPlaceholder as E, parseGroup as F, splitDialogue as G, samplerLabel as H, polishAll as I, summarizeMemory as J, stripSpeakerPrefix as K, polishField as L, moveId as M, naiFamily as N, makeUserMessage as O, nearestScroller as P, writeImageTags as Q, promptPreview as R, historyMessages as S, listedChats as T, samplerShort as U, recentWindow as V, sanitizeNaiTags as W, uid as X, syncCharsFromRole as Y, useApp as Z, fakePureChat as _, regenMessage as a, generateNai as b, routes_DcoSmm1d_exports as c, Home as component, autoScrollNearEdge as d, cn as f, extractGrokTail as g, exportArchive as h, editMessage as i, modelShort as j, mergePolish as k, afterPaint as l, engine_exports as m, attachImage as n, sendOpening as o, downloadBlob as p, stripStatus as q, branchFrom as r, sendUser as s, abortChat as t, applyRoleField as u, fetchLlmModels as v, indexFromY as w, grokStream as x, genPhaseLabel as y, randomSeed as z };
+export { invalidateMemory as a, sendUser as c, Home as component, editMessage as i, routes_Zp8JG0Hy_exports as l, attachImage as n, regenMessage as o, branchFrom as r, sendOpening as s, abortChat as t };

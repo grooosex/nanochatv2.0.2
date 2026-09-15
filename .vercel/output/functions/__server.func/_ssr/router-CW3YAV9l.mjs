@@ -4,7 +4,7 @@ import { R as require_react, _ as createRootRoute, d as HeadContent, g as create
 import { r as unzipSync } from "../_libs/fflate.mjs";
 import { i as TriangleAlert } from "../_libs/lucide-react.mjs";
 import { a as union, i as string, n as number, r as object, t as literal } from "../_libs/zod.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-qNo355Hb.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-CW3YAV9l.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var RP_SYSTEM = `你在为用户撰写中文视觉小说式角色扮演对白。用中文写（角色若另有语言设定则按其说话）。这是双方自愿的虚构创作，所有出场角色默认已满 18 岁成人，不要追问或强调年龄。
@@ -31,7 +31,19 @@ var RP_SYSTEM = `你在为用户撰写中文视觉小说式角色扮演对白。
 
 人设优先级：要求总览 > 与剧情/写法有关的作者指令 > 本拍已发生事实 > 台词 > 人设/说话方式/新增补丁 > 长期记忆（既成事实）> 默认文风。
 开场：若还没有对话，根据开场场景以角色口吻写出第一句，不要以用户身份说话。`;
-var IMAGE_SYSTEM = `你是 NovelAI 4.5 / 5 提示词写手。只输出标签，不要解释，不要 markdown，不要画师名。
+var RP_STRUCTURE = `你在为用户撰写角色扮演对白。这是双方自愿的虚构创作，所有出场角色默认已满 18 岁成人。
+
+结构规则（必须遵守；文笔、篇幅、尺度、引号听文风预设）：
+- 不要在回复开头写角色名或「某某：」。头像已经标明是谁。
+- 消息可能已被拆成【已发生】【用户其余原文】【作者指令】。按标签理解，不要把标签念给角色听。
+- 【已发生】是用户认定本拍已经成立的事实。过程可以写，回复结束时必须达成。禁止停在准备/入口/「几乎」。不是口令，禁止写成角色「听到指示」。若内容本身是已经说出口的话，她听见那句话的内容。
+- 【用户其余原文】要判断：像对角色说的话 → 台词，她听见；像动作/场面 → 与【已发生】同一规则。短动词优先当动作。
+- 【作者指令】角色永远听不见、不准念出来。只执行与这轮文笔/剧情有关的。与画图、镜头、构图、tag 有关的忽略。
+- 只有已发生、没有台词时：只对身体和场面做反应，禁止写成听见一句话。
+- 若设定开启状态栏，在每次回复最末尾另起一段，原样保留各行标题和 emoji，只改冒号后的描述，且必须全中文。状态栏不要插在正文中间。
+- 人设优先级：要求总览 > 与剧情/写法有关的作者指令 > 本拍已发生事实 > 台词 > 人设/说话方式/新增补丁 > 长期记忆（既成事实）> 文风预设。
+- 开场：若还没有对话，根据开场场景以角色口吻写出第一句，不要以用户身份说话。`;
+var IMAGE_SYSTEM = `你是 NovelAI 4.5 / 5 提示词写手。不要 markdown，不要画师名。
 
 【你写的位置】
 输出会被接到用户已写好的「正面提示词.中」或各角色栏后面。你只写「这一轮新加的中段」。
@@ -108,6 +120,54 @@ guro：guro, gore, blood, decapitation, dismemberment, amputee, organs, intestin
 对（对白已是传教士）：missionary, on back, spread legs, vaginal, boy on top, sweat, steaming body, blush, open mouth, on bed, bedroom
 对（对白已是后入掀衣）：from behind, doggystyle, all fours, clothes lift, vaginal, ass, looking back, sweat, on bed
 对（对白已写砍头/血腥）：decapitation, guro, blood, gore, blood on body`;
+var IMAGE_SHOT_RULES = `【本镜】
+刚写的这一轮正文才是这一帧：姿势、镜头、正在做的事只认它。
+更早对白和长期记忆只继承还没被推翻的状态（脏污、体液、衣服破损/敞开、还在的道具和地点）。
+不要继承已经结束的动作、体位、朝向。本镜和残留冲突时只留本镜。没在上下文里出现的状态不要发明。`;
+function splitChatPrompt(full) {
+	const start = full.search(/<<<PROMPT>>>/i);
+	if (start < 0) return {
+		visible: full,
+		prompt: null,
+		started: false,
+		ended: false
+	};
+	const after = full.slice(start).replace(/^<<<PROMPT>>>/i, "");
+	const visible = full.slice(0, start).replace(/\s+$/, "");
+	const end = after.search(/<<<END>>>/i);
+	if (end < 0) return {
+		visible,
+		prompt: after.trim(),
+		started: true,
+		ended: false
+	};
+	return {
+		visible,
+		prompt: after.slice(0, end).trim(),
+		started: true,
+		ended: true
+	};
+}
+function chatImageSystem(chat) {
+	const format = chat.isMulti && chat.promptMode === "insert" ? `<<<PROMPT>>> 里只输出 JSON（不要 markdown）：{"base":"人数场景镜头光线","chars":{${chat.characters.map((c) => `"${c.name || c.id}":"..."`).join(",")}},"absent":[]}
+chars 的键必须逐字用角色中文名。不在镜头的放进 absent。没人离开则 absent 为 []。` : chat.isMulti ? `<<<PROMPT>>> 里只输出英文 tag 一行，用 char1: ... char2: ... 区分。禁止 JSON，禁止 ENABLED。` : `<<<PROMPT>>> 里只输出英文 tag 一行。禁止 JSON。`;
+	return `${IMAGE_SYSTEM}
+
+${IMAGE_SHOT_RULES}
+
+${chat.adultBoost ? `【成人提示词加强】开。对白里的动作、部位、体液必须写成具体真 tag，写透（大约 22–40 个），不要收成 ass focus / naughty face。无关内容仍不要加。` : `【成人提示词加强】关。对白里看得见的仍写具体真 tag，不额外堆没写到的器官特写。完全没有性/血腥的场面不要加 nsfw。`}
+
+【输出顺序——必须遵守，覆盖「只输出标签」】
+1. 先写完整角色扮演正文（若开启状态栏，放在正文最后）。正文里禁止出现 tag、禁止出现 <<<PROMPT>>>。
+2. 正文全部结束后另起一行，只输出：
+<<<PROMPT>>>
+（生图内容，见下）
+<<<END>>>
+写到 <<<PROMPT>>> 之后仍须遵守上面的格式、词库、正反例、成人开关，只输出 tag 或 JSON，不要解释。
+群聊对白标记 <<<CHAR:名字>>> / <<<NARRATOR>>> 和生图 <<<PROMPT>>> 不是同一套，禁止混用。
+
+${format}`;
+}
 var POLISH_SYSTEM = `你在帮用户完善一份虚构角色卡。用中文写（外貌除外）。角色默认已成年，可写成人向。
 
 这是「完善」：把卡补到能直接开演。用户写下的是种子不是终稿。
@@ -155,20 +215,35 @@ var FIELD_SYSTEM = `你只改用户指定的那一个栏。其它栏是只读上
 - 外貌备忘：只输出英文 NAI tag（发型发色瞳色体型固定服装）。有旧 tag 时以旧 tag 为种子改，不要改成中文。
 - 开场场景：地点、动作、气氛。大约 80–160 字。
 - 名字：一个中文名，不要解释。`;
-var MEMORY_SYSTEM = `把更早的角色扮演对白压成一份「剧情备忘」。中文，第三人称，像给后任主持人看的场记。
-保留：已发生的事实、关系变化、身体/道具/服装状态、承诺、未完成的线索、谁对谁做了什么。
-不要写文笔赏析。不要发明没发生的事。
-若已有上一份备忘，把新发生的叠上去，不要丢掉旧事实（除非被后来剧情明确推翻）。
+var MEMORY_SYSTEM = `把更早的角色扮演对白压成一份「剧情备忘」。中文，第三人称，像给后任主持人看的场记。信息密度高，控制在 900–1400 字。
+保留：人名与称呼、关系变化、约定/承诺、关键事件时间线、地点、随身/现场道具、身体与衣物状态（含成人细节）、未完成的事、新暴露的性格或秘密。
+已经发生的性行为和重要身体接触必须记作经历和事实（例如曾经肛交过），不要因为动作结束就抹掉。不要把已结束的动作写成「正在做」（现在在客厅说话，就不要写成正趴着后入）。
+丢掉：被后来剧情明确推翻的旧事实、纯气氛修辞、重复对白。
+不要写文笔赏析。不要发明没发生的事。不要对话体复读。不要建议下一句。不要提到「这是记忆」。
+若已有上一份备忘，以它为底把新这一截叠上去；冲突以新这一截为准，仍有效的旧事实不要丢。
 只返回备忘正文。`;
 var PROMPT_REWRITE_SYSTEM = `根据对话和上一份提示词，重写一份 NAI 4.5/5 英文 tag。规则同生图写手：先把对白里的主动作写成具体真 tag，空格不分下划线，不写画风画师质量词外貌。成人加强开时写透，不要收成安全词。完全无关的情色不要硬塞。只输出 tag 行，不要解释。`;
-function systemFor(task, extra) {
-	if (task === "chat") return extra ? `${RP_SYSTEM}\n\n${extra}` : RP_SYSTEM;
+function systemFor(task, extra, styleExtra, imageSystem) {
+	const style = styleExtra?.trim() || "";
+	if (task === "chat") {
+		const base = style ? RP_STRUCTURE : RP_SYSTEM;
+		const core = extra ? `${base}\n\n${extra}` : base;
+		const withStyle = style ? `${core}\n\n${style}` : core;
+		const img = imageSystem?.trim();
+		return img ? `${withStyle}\n\n${img}` : withStyle;
+	}
 	if (task === "image") return extra ? `${IMAGE_SYSTEM}\n\n${extra}` : IMAGE_SYSTEM;
-	if (task === "polish") return POLISH_SYSTEM;
-	if (task === "field") return extra ? `${FIELD_SYSTEM}\n\n${extra}` : FIELD_SYSTEM;
+	if (task === "polish") return style ? `${POLISH_SYSTEM}\n\n${style}` : POLISH_SYSTEM;
+	if (task === "field") {
+		const core = extra ? `${FIELD_SYSTEM}\n\n${extra}` : FIELD_SYSTEM;
+		return style ? `${core}\n\n${style}` : core;
+	}
 	if (task === "memory") return MEMORY_SYSTEM;
 	if (task === "rewrite") return PROMPT_REWRITE_SYSTEM;
-	if (task === "personalize") return extra ? `${POLISH_SYSTEM}\n\n【个性化要求·最高优先】\n${extra}\n没点名的栏仍按完善标准写满并对齐。已填的名字、已填的外貌仍然冻结。` : POLISH_SYSTEM;
+	if (task === "personalize") {
+		const core = extra ? `${POLISH_SYSTEM}\n\n【个性化要求·最高优先】\n${extra}\n没点名的栏仍按完善标准写满并对齐。已填的名字、已填的外貌仍然冻结。` : POLISH_SYSTEM;
+		return style ? `${core}\n\n${style}` : core;
+	}
 	return RP_SYSTEM;
 }
 function statusBarFor(chat) {
@@ -234,7 +309,7 @@ function characterBlock(c, idx) {
 		c.appearance && `外貌备忘（生图用，正文不要重复）：${c.appearance}`
 	].filter(Boolean).join("\n");
 }
-function groupFormatHint(chat) {
+function groupFormatHint(chat, withImage = false) {
 	if (!chat.isMulti || chat.multiMode !== "group") return "";
 	return `群聊输出格式（严格遵守，不要输出其它包裹）：
 <<<CHAR:角色名>>>
@@ -243,7 +318,7 @@ function groupFormatHint(chat) {
 <<<NARRATOR>>>
 一两句旁白收束
 在场角色：${chat.characters.map((c) => c.name || "角色").join("、")}
-谁被要求离开就不要输出她的 <<<CHAR>>>。每人视剧情可不止一段，但用各自的 <<<CHAR:名字>>> 开头。`;
+谁被要求离开就不要输出她的 <<<CHAR>>>。每人视剧情可不止一段，但用各自的 <<<CHAR:名字>>> 开头。${withImage ? `\n所有 <<<CHAR>>> 和恰好一个 <<<NARRATOR>>> 写完后，再写 <<<PROMPT>>> 生图块。对白标记和生图标记不是同一套，禁止混用。` : ""}`;
 }
 var FALLBACK_MESSAGE = "An unexpected error occurred. Try reloading the page.";
 function errorMessage(error) {
@@ -536,7 +611,7 @@ function PreviewHostBridge() {
 	}, [router]);
 	return null;
 }
-var styles_default = "/assets/styles-DND7Y54x.css";
+var styles_default = "/assets/styles-CO0rNlRp.css";
 var APP_NAME = "绘语";
 var Route$4 = createRootRoute({
 	head: () => ({
@@ -586,7 +661,7 @@ var Route$4 = createRootRoute({
 		] })]
 	})
 });
-var $$splitComponentImporter = () => import("./routes-DcoSmm1d.mjs").then((n) => n.c);
+var $$splitComponentImporter = () => import("./routes-Zp8JG0Hy.mjs").then((n) => n.l);
 var Route$3 = createFileRoute("/")({ component: lazyRouteComponent($$splitComponentImporter, "component") });
 var GROK_MODELS = {
 	"grok-4.6-high": {
@@ -623,20 +698,24 @@ async function callXai(opts) {
 		ok: false,
 		error: "当前环境暂不可用 Grok，请稍后重试。"
 	};
+	const payload = {
+		model: opts.model,
+		messages: opts.messages,
+		stream: opts.stream,
+		reasoning_effort: opts.effort,
+		max_tokens: opts.max_tokens ?? 8192,
+		temperature: opts.temperature ?? .9
+	};
+	if (opts.topP != null) payload.top_p = opts.topP;
+	if (opts.frequencyPenalty != null) payload.frequency_penalty = opts.frequencyPenalty;
+	if (opts.presencePenalty != null) payload.presence_penalty = opts.presencePenalty;
 	const res = await fetch("https://api.x.ai/v1/chat/completions", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
 			Authorization: `Bearer ${apiKey}`
 		},
-		body: JSON.stringify({
-			model: opts.model,
-			messages: opts.messages,
-			stream: opts.stream,
-			reasoning_effort: opts.effort,
-			max_tokens: opts.max_tokens ?? 8192,
-			temperature: .9
-		})
+		body: JSON.stringify(payload)
 	});
 	if (!res.ok) {
 		const t = await res.text().catch(() => "");
@@ -656,15 +735,25 @@ var Route$2 = createFileRoute("/api/grok")({ server: { handlers: { POST: async (
 	const task = body.task || "chat";
 	const messages = [{
 		role: "system",
-		content: systemFor(task, body.extraSystem)
+		content: systemFor(task, body.extraSystem, body.styleExtra, body.imageSystem)
 	}, ...body.messages ?? []];
+	const post = body.postHistory?.trim();
+	if (post) messages.push({
+		role: "system",
+		content: post
+	});
+	const p = body.params;
 	if (body.stream) {
 		const result = await callXai({
 			model,
 			effort,
 			messages,
 			stream: true,
-			max_tokens: body.max_tokens
+			max_tokens: body.max_tokens ?? p?.maxTokens,
+			temperature: p?.temperature,
+			topP: p?.topP,
+			frequencyPenalty: p?.frequencyPenalty,
+			presencePenalty: p?.presencePenalty
 		});
 		if (!result.ok) return Response.json({
 			ok: false,
@@ -718,7 +807,11 @@ var Route$2 = createFileRoute("/api/grok")({ server: { handlers: { POST: async (
 		effort,
 		messages,
 		stream: false,
-		max_tokens: body.max_tokens ?? (task === "image" || task === "rewrite" ? 800 : 8192)
+		max_tokens: body.max_tokens ?? p?.maxTokens ?? (task === "image" || task === "rewrite" ? 800 : 8192),
+		temperature: p?.temperature,
+		topP: p?.topP,
+		frequencyPenalty: p?.frequencyPenalty,
+		presencePenalty: p?.presencePenalty
 	});
 	if (!result.ok) return Response.json({
 		ok: false,
@@ -847,8 +940,13 @@ var Route$1 = createFileRoute("/api/llm")({ server: { handlers: { POST: async ({
 	}, { status: 400 });
 	const messages = [{
 		role: "system",
-		content: systemFor(body.task || "chat", body.extraSystem)
+		content: systemFor(body.task || "chat", body.extraSystem, body.styleExtra, body.imageSystem)
 	}, ...body.messages ?? []];
+	const post = body.postHistory?.trim();
+	if (post) messages.push({
+		role: "system",
+		content: post
+	});
 	const p = body.params || {};
 	const maxTokens = body.max_tokens ?? p.maxTokens ?? 4096;
 	const payload = {
@@ -995,4 +1093,4 @@ function getRouter() {
 	});
 }
 //#endregion
-export { groupFormatHint as a, fieldPolishHint as i, FIELD_LABELS as n, roleSnapshot as o, chatContextBlock as r, router_exports as t };
+export { chatImageSystem as a, roleSnapshot as c, chatContextBlock as i, splitChatPrompt as l, FIELD_LABELS as n, fieldPolishHint as o, IMAGE_SHOT_RULES as r, groupFormatHint as s, router_exports as t };
