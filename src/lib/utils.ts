@@ -9,6 +9,15 @@ export function uid(prefix = "") {
   return `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
+export function sortHistoryNewestFirst<T extends { createdAt?: number; id?: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const dt = (b.createdAt || 0) - (a.createdAt || 0);
+    if (dt) return dt;
+    return String(b.id || "").localeCompare(String(a.id || ""));
+  });
+}
+
+
 export function uniqueNumberedName(desired: string, taken: Iterable<string>): string {
   const base = desired.trim();
   const set = new Set(taken);

@@ -12,7 +12,6 @@ import { applyBackFlags, applyFrontFlags, applyMergedFlags } from "@/lib/prompt-
 import { listedChats, useApp } from "@/lib/store";
 import { insertTag, loadTags, suggestTags, type Tag } from "@/lib/tags";
 import { naiFamily } from "@/lib/nai";
-import { cachedUrl } from "@/lib/idb";
 import { replyStoryText } from "@/lib/reply-markup";
 import {
   FOLLOW_IMAGE_AI,
@@ -23,7 +22,7 @@ import {
 import type { AppearancePreset, Chat, CharacterPrompt, ImageParams, NaiModelId, NoiseSchedule, SamplerId, UcPreset } from "@/lib/types";
 import { cn, randomSeed, uid } from "@/lib/utils";
 import { LibraryDrawer } from "./LibraryDrawer";
-import { Avatar, Card, ExpandSelect, Slider, Switch, TextArea } from "./ui-kit";
+import { Card, ChatAvatar, ExpandSelect, Slider, Switch, TextArea } from "./ui-kit";
 
 function scrollJump(jump: string) {
   const el = document.querySelector(`[data-section="${jump}"]`) as HTMLElement | null;
@@ -156,7 +155,7 @@ export function ParamsPane({ chat, mode = "chat" }: { chat: Chat; mode?: "chat" 
               <div className="mt-1 text-[11px] tracking-[0.16em] text-muted">CHAT IMAGE</div>
               <h1 className="font-serif text-2xl">聊天配图参数</h1>
             </div>
-            <ImageAiPicker chat={chat} />
+            <ImageAiPicker />
           </div>
           <div className="mb-3 mt-1 text-[12px] text-muted">
             {chat.isDraft
@@ -573,35 +572,48 @@ function AppearSelect({ className, onPick }: { className?: string; onPick: (a: A
   );
 }
 
-function ImageAiPicker({ chat }: { chat: Chat }) {
+function ImageAiPicker() {
   const source = useApp((s) => s.settings.chatSource);
   const llmModel = useApp((s) => s.settings.llmModel);
   const starred = useApp((s) => s.settings.llmStarred);
   const available = useApp((s) => s.settings.llmModels);
-  const ids = imagePickerModels({
+  const connected = useApp((s) => s.settings.llmConnected);
+  const imageModelId = useApp((s) => s.settings.imageModelId);
+  const rows = imagePickerModels({
     chatSource: source,
     llmStarred: starred,
     llmModels: available,
     llmModel,
-    imageModelId: chat.imageModelId,
-    imageModelPin: chat.imageModelPin,
+    llmConnected: connected,
+    imageModelId,
   });
-  const value = chat.imageModelId || FOLLOW_IMAGE_AI;
+  const ids = rows.filter((r) => !r.header).map((r) => r.id);
+  const value = imageModelId && ids.includes(imageModelId) ? imageModelId : FOLLOW_IMAGE_AI;
   return (
     <div className="shrink-0 pt-1 text-right">
       <div className="text-[11px] tracking-[0.16em] text-muted">配图 AI</div>
       <div className="mt-1 inline-flex rounded-full border border-line bg-card">
         <ExpandSelect
-          value={ids.includes(value) ? value : FOLLOW_IMAGE_AI}
-          options={ids.map((id) => ({ id, label: imageAiLabel(id), short: imageAiLabel(id) }))}
-          onChange={(id) => useApp.getState().patchChat(chat.id, applyImageAiPick(chat, id))}
+          value={value}
+          options={rows.map((r) => ({
+            id: r.id,
+            label: r.header ?? imageAiLabel(r.id),
+            short: r.header ?? imageAiLabel(r.id),
+            header: Boolean(r.header),
+            danger: r.danger,
+          }))}
+          onChange={(id) => {
+            if (id.startsWith("__hdr_")) return;
+            const s = useApp.getState().settings;
+            useApp.getState().setSettings(applyImageAiPick(s, id));
+          }}
           align="left"
           menu="end"
         />
       </div>
-      {chat.imageModelId ? (
+      {imageModelId ? (
         <p className="mt-1 max-w-[11rem] text-[11px] leading-4 text-muted">
-          对白用顶栏，提示词用 {imageAiLabel(chat.imageModelId)}
+          对白用顶栏，提示词用 {imageAiLabel(imageModelId)}
         </p>
       ) : null}
     </div>
@@ -697,7 +709,7 @@ function PreviewParamsDrawer({
                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 onClick={() => peekChat(c)}
               >
-                <Avatar url={cachedUrl(c.avatarBlobId)} name={c.name} size={40} />
+                <ChatAvatar chat={c} size={40} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1 truncate text-[14px] font-medium">
                     {c.starred && <Star className="size-3 fill-primary text-primary" />}

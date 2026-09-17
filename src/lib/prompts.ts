@@ -118,8 +118,15 @@ guro：guro, gore, blood, decapitation, dismemberment, amputee, organs, intestin
 
 export const IMAGE_SHOT_RULES = `【本镜】
 刚写的这一轮正文才是这一帧：姿势、镜头、正在做的事只认它。
-更早对白和长期记忆只继承还没被推翻的状态（脏污、体液、衣服破损/敞开、还在的道具和地点）。
+更早对白和长期记忆只继承还没被推翻的状态（脏污、体液、衣服破损/敞开、还在的道具）。
 不要继承已经结束的动作、体位、朝向。本镜和残留冲突时只留本镜。没在上下文里出现的状态不要发明。`;
+
+export const IMAGE_BG_RULES = `【背景】
+主背景只有一个，以本镜对白为准。换场只用新的，不要两个地点并排。
+先看本镜和近文对白：对白里有人所在的地方或换场，就按这个写，不要去看上一镜图。
+对白完全看不出人在哪，才用下面的「上一镜地点」；没有就不要写地点，不要编。
+地点写在你输出的最前面（多人写在 base 最前）。
+不要从长期记忆抄地点。`;
 
 export function splitChatPrompt(full: string): {
   visible: string;
@@ -136,7 +143,7 @@ export function splitChatPrompt(full: string): {
   return { visible, prompt: after.slice(0, end).trim(), started: true, ended: true };
 }
 
-export function chatImageSystem(chat: Chat): string {
+export function chatImageSystem(chat: Chat, prevScene = ""): string {
   const insert = chat.isMulti && chat.promptMode === "insert";
   const format = insert
     ? `<<<PROMPT>>> 里只输出 JSON（不要 markdown）：{"base":"人数场景镜头光线","chars":{${chat.characters.map((c) => `"${c.name || c.id}":"..."`).join(",")}},"absent":[]}
@@ -150,6 +157,11 @@ chars 的键必须逐字用角色中文名。不在镜头的放进 absent。没�
   return `${IMAGE_SYSTEM}
 
 ${IMAGE_SHOT_RULES}
+
+${IMAGE_BG_RULES}
+
+上一镜地点（对白看不出人在哪时才用，只借人所在的地方）：
+${prevScene.trim() || "（无）"}
 
 ${adult}
 
@@ -256,6 +268,18 @@ export function statusBarFor(chat: Chat): string {
   return (chat.statusBar || "").replaceAll("{name}", name);
 }
 
+/** Keep titles, drop filled descriptions — used when regenerating a reply. */
+export function statusBarSkeleton(text: string): string {
+  return text
+    .split("\n")
+    .map((line) => {
+      const i = line.search(/[:：]/);
+      if (i < 0) return line;
+      return line.slice(0, i + 1);
+    })
+    .join("\n");
+}
+
 export const FIELD_LABELS: Record<string, string> = {
   name: "名字",
   overview: "要求总览",
@@ -317,7 +341,7 @@ export function fieldPolishHint(opts: {
   ].join("\n\n");
 }
 
-export function chatContextBlock(chat: Chat): string {
+export function chatContextBlock(chat: Chat, opts?: { regen?: boolean }): string {
   const chars = chat.characters
     .map((c, i) => characterBlock(c, chat.isMulti ? i + 1 : 0))
     .join("\n\n");
@@ -325,13 +349,16 @@ export function chatContextBlock(chat: Chat): string {
     .map((e, i) => `新增${i + 1}：${e.body}`)
     .filter((s) => s.length > 4)
     .join("\n");
+  const bar = statusBarFor(chat);
+  const barText = opts?.regen ? statusBarSkeleton(bar) : bar;
   return [
     chat.overview ? `【要求总览】\n${chat.overview}` : "",
     chars,
     chat.opening ? `【开场场景】\n${chat.opening}` : "",
     extras ? `【补丁】\n${extras}` : "",
     chat.memory ? `【长期记忆·既成事实】\n${chat.memory}` : "",
-    chat.statusBarOn ? `【状态栏开启】每轮末尾输出，模板：\n${statusBarFor(chat)}` : "【状态栏关闭】",
+    chat.statusBarOn ? `【状态栏开启】每轮末尾输出，模板：\n${barText}` : "【状态栏关闭】",
+    opts?.regen ? "【重写】这是同一拍另写一条路。禁止套用上一稿的句子、段落结构和状态栏描述。" : "",
     chat.isMulti
       ? `【多人】模式=${chat.multiMode === "group" ? "群聊（角色分头像各说，最后旁白）" : "同聊（一条里写所有在场角色）"}`
       : "",

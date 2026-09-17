@@ -161,9 +161,9 @@ export interface Chat {
   messages: ChatMessage[];
   avatarBlobId?: string;
   scrollTop: number;
-  /** null/unset = 与聊天一致. Independent of the top-bar chat model. */
+  /** @deprecated lifted into Settings.imageModelId */
   imageModelId?: string | null;
-  /** Last explicit API pick for 配图 AI; kept at the end of the list on Grok. */
+  /** @deprecated lifted into Settings.imageModelPin */
   imageModelPin?: string | null;
 }
 
@@ -281,6 +281,10 @@ export interface Settings {
   naiConnected: boolean;
   cooldownUntil: number;
   chatImage: boolean;
+  /** null/unset = 与聊天一致. Global, not per-chat. */
+  imageModelId?: string | null;
+  /** Last explicit API pick for 配图 AI; kept at the end of the list on Grok. */
+  imageModelPin?: string | null;
   theme: "light" | "dark";
 }
 

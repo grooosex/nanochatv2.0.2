@@ -1,10 +1,10 @@
-import { grokOnce } from "./grok-client";
-import { chatContextBlock, fieldPolishHint, groupFormatHint, IMAGE_SHOT_RULES, roleSnapshot, splitChatPrompt, statusBarFor } from "./prompts";
+import { grokOnce, grokStream } from "./grok-client";
+import { chatContextBlock, fieldPolishHint, groupFormatHint, IMAGE_BG_RULES, IMAGE_SHOT_RULES, roleSnapshot, splitChatPrompt, statusBarFor } from "./prompts";
 import { buildPolishUserContent, extractFieldText, parsePolishJson } from "./role-polish";
 import { formatUserForChat } from "./user-markup";
 import { stripSpeakerPrefix } from "./rp-text";
 import { replyContextText } from "./reply-markup.ts";
-import { resolveImageWrite } from "./image-ai.ts";
+import { resolveImageWrite, imageWriteFields } from "./image-ai.ts";
 import { buildNaiPayload } from "./nai";
 import { sanitizeNaiTags, assignCharTags, extractJsonObject, resolveAbsentIds } from "./nai-tags";
 import { RECENT_TURNS } from "./constants";
@@ -17,7 +17,8 @@ import {
   foldIntervalMessages,
   formatMemoryDialog,
   isPlausibleMemory,
-  planFold,
+  MEMORY_PARAMS,
+  nextAutoSlice,
 } from "./chat-memory";
 
 export function stripStatus(text: string) {
@@ -109,22 +110,31 @@ export async function summarizeMemory(
   grokModelId: GrokModelId,
   slice?: ChatMessage[],
   previous?: string,
+  signal?: AbortSignal,
+  onDelta?: (t: string) => void,
 ) {
   const keep = recentWindow();
   const older = slice ?? chat.messages.slice(0, Math.max(0, chat.messages.length - keep));
   if (older.length < 2) throw new Error("memory-skip");
   const dialog = formatMemoryDialog(older);
   if (!dialog.trim()) throw new Error("memory-skip");
-  const text = await grokOnce({
+  const s = useApp.getState().settings;
+  const dest = resolveImageWrite(s.imageModelId);
+  const payload: Record<string, unknown> = {
     task: "memory",
     grokModelId,
+    ...imageWriteFields(s.imageModelId),
+    params: MEMORY_PARAMS,
+    max_tokens: MEMORY_PARAMS.maxTokens,
     messages: [
       {
         role: "user",
         content: `上一份备忘：\n${previous ?? chat.memory ?? "（无）"}\n\n需要收进去的对白：\n${dialog}`,
       },
     ],
-  });
+  };
+  if (!dest.split) payload.grokModelId = grokModelId;
+  const text = await grokStream(payload, (t) => onDelta?.(t), signal);
   const clipped = clipMemoryText(text);
   if (!isPlausibleMemory(clipped)) throw new Error("memory-invalid");
   return clipped;
@@ -132,12 +142,12 @@ export async function summarizeMemory(
 
 export function nextFoldSlice(chat: Chat) {
   const { W, I } = foldWindow();
-  return planFold(chat.messages.length, chat.memoryUntil || 0, chat.memoryFoldAt || 0, W, I);
+  return nextAutoSlice(chat.messages.length, chat.memoryUntil || 0, W, I);
 }
 
 function imageBrief(
   chat: Chat,
-  opts: { shot?: string; residual?: string; last?: string },
+  opts: { shot?: string; residual?: string; last?: string; prevScene?: string },
 ) {
   const names = chat.characters.map((c) => c.name).filter(Boolean).join("、");
   const roster = chat.characters
@@ -145,11 +155,11 @@ function imageBrief(
     .join("\n");
   const insert = chat.isMulti && chat.promptMode === "insert";
   const format = insert
-    ? `输出 JSON（不要 markdown）：{"base":"人数场景镜头光线","chars":{${chat.characters.map((c) => `"${c.name || c.id}":"..."`).join(",")}},"absent":[]}
+    ? `输出 JSON（不要 markdown）：{"base":"地点写最前，然后人数场景镜头光线","chars":{${chat.characters.map((c) => `"${c.name || c.id}":"..."`).join(",")}},"absent":[]}
 chars 的键必须逐字用上面的角色名。不在镜头的角色放进 absent，不要写进 chars。没人离开则 absent 为 []。`
     : chat.isMulti
-      ? "只输出英文 tag 一行，用 char1: ... char2: ... 区分。禁止 JSON，禁止 ENABLED。"
-      : "只输出英文 tag 一行。禁止 JSON。";
+      ? "只输出英文 tag 一行，地点写最前，用 char1: ... char2: ... 区分。禁止 JSON，禁止 ENABLED。"
+      : "只输出英文 tag 一行，地点写最前。禁止 JSON。";
   const shot = (opts.shot || "").trim();
   const residual = (opts.residual || opts.last || "").trim();
   return `角色：${names || "（未命名）"}
@@ -160,6 +170,8 @@ ${chat.isMulti ? `角色名单：\n${roster}` : ""}
 
 ${IMAGE_SHOT_RULES}
 
+${IMAGE_BG_RULES}
+
 写法：先抽出本镜里最显眼的动作/部位，写成具体真 tag，不要收成 ass focus、naughty face 这种安全词。空格真 tag，禁止下划线。不要写画师质量词和外貌。
 用户已发生的动作优先于角色回里写软了的版本，必须写成已经发生，不要停在入口。
 成人开着：把画面写透、写够，不要保守。「不要硬塞」只挡住完全无关的内容。
@@ -169,8 +181,11 @@ ${IMAGE_SHOT_RULES}
 本镜（姿势、镜头、正在做的事只认这段）：
 ${shot || "（无）"}
 
-${chat.memory.trim() ? `长期记忆（只继承没被推翻的状态）：\n${chat.memory.trim()}\n` : ""}残留参考（不要继承已结束的动作/体位/朝向）：
+${chat.memory.trim() ? `长期记忆（只继承没被推翻的状态，不含地点）：\n${chat.memory.trim()}\n` : ""}残留参考（不要继承已结束的动作/体位/朝向）：
 ${residual || "（无）"}
+
+上一镜地点（对白看不出人在哪时才用，只借人所在的地方）：
+${(opts.prevScene || "").trim() || "（无）"}
 
 ${format}`;
 }
@@ -209,26 +224,21 @@ export async function writeImageTags(
   lastText: string,
   grokModelId: GrokModelId,
   shotText?: string,
+  prevScene?: string,
 ) {
   const extra = chat.adultBoost
     ? "成人提示词加强：开。这是最高优先级之一。对白里的动作、部位、体液必须写成具体真 tag，写透（22–40 个），不要收成 ass focus / naughty face。无关内容仍不要加。只输出标签，不要解释。"
     : "成人提示词加强：关。对白里看得见的仍写具体真 tag，不要额外堆没写到的器官特写。完全没有性/血腥的场面不要加 nsfw。只输出标签，不要解释。";
-  const dest = resolveImageWrite(chat.imageModelId);
+  const imageModelId = useApp.getState().settings.imageModelId;
+  const dest = resolveImageWrite(imageModelId);
   const payload: Record<string, unknown> = {
     task: "image",
     extraSystem: extra,
-    messages: [{ role: "user", content: imageBrief(chat, { shot: shotText, residual: lastText }) }],
+    messages: [{ role: "user", content: imageBrief(chat, { shot: shotText, residual: lastText, prevScene }) }],
     max_tokens: 900,
+    ...imageWriteFields(imageModelId),
   };
-  if (!dest.split) {
-    payload.grokModelId = grokModelId;
-  } else if (dest.via === "grok") {
-    payload.via = "grok";
-    payload.grokModelId = dest.grokModelId;
-  } else {
-    payload.via = "api";
-    payload.model = dest.model;
-  }
+  if (!dest.split) payload.grokModelId = grokModelId;
   const text = await grokOnce(payload);
   return parseImageTagOutput(text, chat);
 }

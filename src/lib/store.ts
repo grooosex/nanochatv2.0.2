@@ -24,7 +24,7 @@ import type {
   TabId,
 } from "./types";
 import { normalizeChatMemory } from "./chat-memory";
-import { uid } from "./utils";
+import { uid, sortHistoryNewestFirst } from "./utils";
 import { migrateFavorite, presetNameFrom } from "./presets";
 
 type Toast = { id: number; text: string };
@@ -61,7 +61,8 @@ interface UI {
   autoPolish: boolean;
   paramsJump: string | null;
   llmSettings: boolean;
-  memoryHint: { chatId: string; text: string } | null;
+  memoryHint: { chatId: string; state: "generating" | "ok" | "fail"; error?: string; draft?: string } | null;
+  imageTrayOffer: { chatId: string; msgId: string } | null;
 }
 
 interface State {
@@ -78,6 +79,7 @@ interface State {
   editBackup: Chat | null;
   toasts: Toast[];
   ui: UI;
+  composerDrafts: Record<string, string>;
   hydrate: () => Promise<void>;
   toast: (text: string) => void;
   setUI: (p: Partial<UI>) => void;
@@ -119,6 +121,7 @@ interface State {
   patchHistory: (id: string, p: Partial<HistoryItem>) => void;
   deleteHistory: (id: string) => void;
   setCooldown: (until: number) => void;
+  setComposerDraft: (chatId: string, text: string) => void;
 }
 
 const ui0 = (): UI => ({
@@ -148,6 +151,7 @@ const ui0 = (): UI => ({
   paramsJump: null,
   llmSettings: false,
   memoryHint: null,
+  imageTrayOffer: null,
 });
 
 function persistChat(c: Chat) {
@@ -171,10 +175,15 @@ export const useApp = create<State>((set, get) => ({
   editBackup: null,
   toasts: [],
   ui: ui0(),
+  composerDrafts: {},
 
   hydrate: async () => {
     const data = await loadAll();
-    const [pureRow, currentRow] = await Promise.all([db.kv.get("pureParams"), db.kv.get("currentId")]);
+    const [pureRow, currentRow, draftsRow] = await Promise.all([
+      db.kv.get("pureParams"),
+      db.kv.get("currentId"),
+      db.kv.get("composerDrafts"),
+    ]);
     const live = data.chats.filter((c) => !c.isDraft).map((c) => ({
       ...normalizeChatMemory(c),
       grokModelId: migrateGrokId(c.grokModelId),
@@ -192,14 +201,21 @@ export const useApp = create<State>((set, get) => ({
     const currentId = live.some((c) => c.id === savedId)
       ? savedId
       : live.sort((a, b) => b.updatedAt - a.updatedAt)[0]?.id ?? null;
+    const lifted = liftImageAi(settings, live, currentId);
+    const nextSettings = { ...settings, ...lifted };
+    if (!settings.imageModelId && !settings.imageModelPin && (lifted.imageModelId || lifted.imageModelPin)) {
+      void db.kv.put({ key: "settings", value: nextSettings });
+    }
     set({
       ready: true,
       ...data,
-      settings,
+      settings: nextSettings,
       chats: live,
       favorites: (data.favorites ?? []).map(migrateFavorite).filter(Boolean) as FavoriteItem[],
       pureParams: normalizePureParams((pureRow?.value as ImageParams) ?? defaultPureParams()),
       currentId,
+      history: sortHistoryNewestFirst(data.history ?? []),
+      composerDrafts: parseComposerDrafts(draftsRow?.value),
     });
   },
 
@@ -225,14 +241,7 @@ export const useApp = create<State>((set, get) => ({
   },
 
   clearImageAi: () => {
-    set((s) => ({
-      chats: s.chats.map((c) => {
-        if (!c.imageModelId && !c.imageModelPin) return c;
-        const next = { ...c, imageModelId: null, imageModelPin: null, updatedAt: Date.now() };
-        persistChat(next);
-        return next;
-      }),
-    }));
+    get().setSettings({ imageModelId: null, imageModelPin: null });
   },
 
   current: () => get().chats.find((c) => c.id === get().currentId),
@@ -407,12 +416,17 @@ export const useApp = create<State>((set, get) => ({
     void db.chats.bulkPut(moved.filter((c) => !c.isDraft));
     void db.chats.bulkDelete([...ids]);
     void db.folders.bulkDelete([...ids]);
-    set((s) => ({
-      chats: moved,
-      folders,
-      currentId: ids.has(s.currentId || "") ? moved[0]?.id ?? null : s.currentId,
-      ui: { ...s.ui, selectMode: false, selected: [], sortMode: false, menuId: null },
-    }));
+    set((s) => {
+      const composerDrafts = dropDrafts(s.composerDrafts, ids);
+      void db.kv.put({ key: "composerDrafts", value: composerDrafts });
+      return {
+        chats: moved,
+        folders,
+        currentId: ids.has(s.currentId || "") ? moved[0]?.id ?? null : s.currentId,
+        composerDrafts,
+        ui: { ...s.ui, selectMode: false, selected: [], sortMode: false, menuId: null },
+      };
+    });
     get().toast("已删除");
   },
 
@@ -658,7 +672,14 @@ export const useApp = create<State>((set, get) => ({
   },
 
   addFavorite: (blobId) => {
-    const params = structuredClone(get().pureParams);
+    const hist = blobId ? get().history.find((h) => h.blobId === blobId) : undefined;
+    const params = hist?.params
+      ? { ...structuredClone(hist.params), seed: hist.seed, seedLocked: true }
+      : (() => {
+          const p = structuredClone(get().pureParams);
+          if (p.seed != null) p.seedLocked = true;
+          return p;
+        })();
     const f: FavoriteItem = {
       id: uid("fav_"),
       name: presetNameFrom(params),
@@ -698,7 +719,7 @@ export const useApp = create<State>((set, get) => ({
 
   addHistory: (h) => {
     void db.history.put(h);
-    set((s) => ({ history: [h, ...s.history].slice(0, 200) }));
+    set((s) => ({ history: sortHistoryNewestFirst([h, ...s.history]).slice(0, 200) }));
   },
 
   patchHistory: (id, p) => {
@@ -718,7 +739,51 @@ export const useApp = create<State>((set, get) => ({
   },
 
   setCooldown: (until) => get().setSettings({ cooldownUntil: until }),
+
+  setComposerDraft: (chatId, text) => {
+    set((s) => {
+      const composerDrafts = { ...s.composerDrafts };
+      if (text) composerDrafts[chatId] = text;
+      else delete composerDrafts[chatId];
+      void db.kv.put({ key: "composerDrafts", value: composerDrafts });
+      return { composerDrafts };
+    });
+  },
 }));
+
+function parseComposerDrafts(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (k && typeof v === "string" && v) out[k] = v;
+  }
+  return out;
+}
+
+function dropDrafts(drafts: Record<string, string>, ids: Set<string>) {
+  const next = { ...drafts };
+  for (const id of ids) delete next[id];
+  return next;
+}
+
+function liftImageAi(
+  settings: Settings,
+  chats: Chat[],
+  currentId: string | null,
+): { imageModelId: string | null; imageModelPin: string | null } {
+  if (settings.imageModelId || settings.imageModelPin) {
+    return {
+      imageModelId: settings.imageModelId ?? null,
+      imageModelPin: settings.imageModelPin ?? null,
+    };
+  }
+  const cur = chats.find((c) => c.id === currentId);
+  const hit = [cur, ...chats].find((c) => c && (c.imageModelId || c.imageModelPin));
+  return {
+    imageModelId: hit?.imageModelId ?? null,
+    imageModelPin: hit?.imageModelPin ?? null,
+  };
+}
 
 function blobInUse(s: State, blobId: string, skipFav?: string) {
   if (s.favorites.some((f) => f.blobId === blobId && f.id !== skipFav)) return true;

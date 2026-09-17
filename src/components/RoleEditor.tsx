@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, Download, Loader2, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Check, Download, Loader2, Plus, RefreshCw, Sparkles, Trash2, X } from "lucide-react";
 import { DEFAULT_STATUS_BAR, PLACEHOLDERS, emptyCharacter } from "@/lib/constants";
-import { polishAll, polishField, foldWindow, summarizeMemory } from "@/lib/engine";
+import { polishAll, polishField, foldWindow } from "@/lib/engine";
 import { FIELD_LABELS } from "@/lib/prompts";
 import { applyRoleField, mergePolish } from "@/lib/role-polish";
 import { useApp } from "@/lib/store";
 import { syncCharsFromRole } from "@/lib/nai";
 import type { Chat, ExtraField } from "@/lib/types";
 import { uid } from "@/lib/utils";
-import { applySnaps, emptyMemory, foldCoveredEnd, memoryTurnStats } from "@/lib/chat-memory";
-import { invalidateMemory } from "./chat-actions";
+import { emptyMemory, foldCoveredEnd, memoryCaughtUp, memoryTurnStats } from "@/lib/chat-memory";
+import { invalidateMemory, runManualMemory } from "./chat-actions";
 import { ChatModelSelect } from "./ModelSelect";
-import { Card, ExpandSelect, FieldLabel, GhostBtn, PrimaryBtn, Switch, TextArea, TextInput } from "./ui-kit";
+import { Card, ExpandSelect, FieldLabel, GhostBtn, Modal, PrimaryBtn, Switch, TextArea, TextInput } from "./ui-kit";
 import { LibraryDrawer } from "./LibraryDrawer";
 
 type Busy =
@@ -27,6 +27,7 @@ export function RoleEditor({ chat, mode }: { chat: Chat; mode: "create" | "edit"
   const [busy, setBusy] = useState<Busy>(null);
   const [polished, setPolished] = useState(false);
   const [charSel, setCharSel] = useState(0);
+  const [memPick, setMemPick] = useState(false);
   const patch = (p: Partial<Chat>) => useApp.getState().patchChat(chat.id, p);
   const char = chat.characters[charSel] ?? chat.characters[0];
   const autoPolish = useApp((s) => s.ui.autoPolish);
@@ -34,6 +35,12 @@ export function RoleEditor({ chat, mode }: { chat: Chat; mode: "create" | "edit"
   const busyRef = useRef(false);
   const locked = !!busy;
   const memTurns = memoryTurnStats(chat.messages.length, chat.memoryUntil);
+  const { W, I } = foldWindow();
+  const memOk = memoryCaughtUp(chat.messages.length, chat.memoryUntil || 0, W, I);
+  const memReady = foldCoveredEnd(chat.messages.length, W, I) >= 2;
+  const memoryHint = useApp((s) => s.ui.memoryHint);
+  const memStreaming = memoryHint?.chatId === chat.id && memoryHint.state === "generating";
+  const memoryShown = memStreaming && memoryHint.draft != null ? memoryHint.draft : chat.memory;
   const fieldBusyLabel =
     busy?.kind === "field" ? FIELD_LABELS[busy.key] || busy.key : "";
 
@@ -358,8 +365,12 @@ export function RoleEditor({ chat, mode }: { chat: Chat; mode: "create" | "edit"
         <Card className="mb-3">
           <FieldLabel
             sub={
-              <span className="text-[11px] text-muted">
-                （已对话 <span className="text-good">{memTurns.spoken}</span> 轮，已总结到第 <span className="text-good">{memTurns.folded}</span> 轮）
+              <span className="flex items-center gap-1.5 text-[11px] text-muted">
+                <span>
+                  （已对话 <span className="text-good">{memTurns.spoken}</span> 轮，已总结到第{" "}
+                  <span className="text-good">{memTurns.folded}</span> 轮）
+                </span>
+                {memOk ? <Check className="size-3.5 text-good" /> : <X className="size-3.5 text-danger" />}
               </span>
             }
             hint="聊久了会把更早的剧情压成备忘，下一轮当事实用。聊天里看不见。可改、可重总结、可清空。"
@@ -368,9 +379,10 @@ export function RoleEditor({ chat, mode }: { chat: Chat; mode: "create" | "edit"
           </FieldLabel>
           <TextArea
             className="min-h-[120px]"
-            value={chat.memory}
-            placeholder="还没有长期记忆。对话变长后会自动整理。"
+            value={memoryShown}
+            placeholder={memStreaming ? "正在总结…" : "还没有长期记忆。对话变长后会自动整理。"}
             onChange={(e) => {
+              if (memStreaming) return;
               const text = e.target.value;
               const snaps = chat.memorySnaps ?? [];
               const last = snaps[snaps.length - 1];
@@ -393,30 +405,13 @@ export function RoleEditor({ chat, mode }: { chat: Chat; mode: "create" | "edit"
             </GhostBtn>
             <GhostBtn
               className="h-10 w-auto min-w-0 flex-1 whitespace-nowrap px-3 text-[13px]"
-              onClick={async () => {
+              onClick={() => {
                 if (locked) return;
-                setBusy({ kind: "mem" });
-                try {
-                  const { W, I } = foldWindow();
-                  const n = chat.messages.length;
-                  const end = foldCoveredEnd(n, W, I);
-                  if (end < 2) {
-                    useApp.getState().toast("还不够长，先多聊几轮");
-                    return;
-                  }
-                  invalidateMemory(chat.id);
-                  const mem = await summarizeMemory(chat, grok, chat.messages.slice(0, end), "（无）");
-                  patch(
-                    applySnaps([
-                      { covered: end, text: mem, foldAt: n },
-                    ]),
-                  );
-                  useApp.getState().toast("已重新总结");
-                } catch {
-                  useApp.getState().toast("总结失败，旧备忘还在");
-                } finally {
-                  setBusy(null);
+                if (!memReady) {
+                  useApp.getState().toast("还不够长，先多聊几轮");
+                  return;
                 }
+                setMemPick(true);
               }}
             >
               {busy?.kind === "mem" ? "总结中…" : "重新总结"}
@@ -433,6 +428,42 @@ export function RoleEditor({ chat, mode }: { chat: Chat; mode: "create" | "edit"
           </div>
         </Card>
       )}
+
+      <Modal open={memPick} onClose={() => setMemPick(false)} title="重新总结">
+        <p className="mb-4 text-[13px] leading-5 text-muted">
+          {memOk ? "记忆已经齐了。总结到当前只重压最近那一截。" : "记忆还落后。总结到当前会从缺口一次收到位。"}
+        </p>
+        <div className="flex flex-col gap-2">
+          <PrimaryBtn
+            disabled={locked || !memReady}
+            busy={busy?.kind === "mem"}
+            onClick={async () => {
+              if (locked) return;
+              setMemPick(false);
+              setBusy({ kind: "mem" });
+              const ok = await runManualMemory(chat.id, "current");
+              if (ok) useApp.getState().toast("已总结到当前");
+              setBusy(null);
+            }}
+          >
+            总结到当前
+          </PrimaryBtn>
+          <GhostBtn
+            className="h-11"
+            disabled={locked || !memReady}
+            onClick={async () => {
+              if (locked) return;
+              setMemPick(false);
+              setBusy({ kind: "mem" });
+              const ok = await runManualMemory(chat.id, "all");
+              if (ok) useApp.getState().toast("已全部重新总结");
+              setBusy(null);
+            }}
+          >
+            全部重新总结
+          </GhostBtn>
+        </div>
+      </Modal>
 
       <div className="pointer-events-none h-4" />
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-lg bg-gradient-to-t from-bg via-bg to-transparent px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-4">

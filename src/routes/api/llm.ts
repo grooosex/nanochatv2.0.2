@@ -185,8 +185,11 @@ export const Route = createFileRoute("/api/llm")({
             return Response.json({ ok: false, error: openaiError(r.status, t) }, { status: 500 });
           }
           if (body.stream) return sseResponse(r);
-          const json = (await r.json()) as { choices?: { message?: { content?: string } }[] };
-          let text = json.choices?.[0]?.message?.content ?? "";
+          const json = (await r.json()) as {
+            choices?: { message?: { content?: string; reasoning_content?: string; reasoning?: string } }[];
+          };
+          const msg = json.choices?.[0]?.message;
+          let text = (msg?.content || msg?.reasoning_content || msg?.reasoning || "").trim();
           text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
           return Response.json({ ok: true, text });
         } catch (e) {

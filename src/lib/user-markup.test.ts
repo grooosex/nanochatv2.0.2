@@ -6,6 +6,7 @@ import {
   formatUserForImage,
   needsMarkupFormat,
   parseUserMarkup,
+  previousRoundImagePrompt,
   shotAndResidual,
 } from "./user-markup.ts";
 
@@ -98,5 +99,41 @@ describe("shotAndResidual", () => {
     assert.match(shot, /她坐着/);
     assert.match(residual, /在吗/);
     assert.doesNotMatch(residual, /旁白收束/);
+  });
+});
+
+describe("previousRoundImagePrompt", () => {
+  it("takes only the previous assistant's last successful image", () => {
+    const messages = [
+      {
+        id: "a0",
+        role: "assistant",
+        images: [{ status: "done", prompt: "indoors, living room" }],
+      },
+      { id: "u1", role: "user" },
+      {
+        id: "a1",
+        role: "assistant",
+        images: [{ status: "done", prompt: "outdoors, street" }],
+      },
+      { id: "u2", role: "user" },
+      { id: "a2", role: "assistant", images: [] },
+    ];
+    assert.equal(previousRoundImagePrompt(messages, "a2"), "outdoors, street");
+  });
+
+  it("does not walk further if the previous round has no image", () => {
+    const messages = [
+      {
+        id: "a0",
+        role: "assistant",
+        images: [{ status: "done", prompt: "indoors" }],
+      },
+      { id: "u1", role: "user" },
+      { id: "a1", role: "assistant", images: [] },
+      { id: "u2", role: "user" },
+      { id: "a2", role: "assistant", images: [] },
+    ];
+    assert.equal(previousRoundImagePrompt(messages, "a2"), "");
   });
 });

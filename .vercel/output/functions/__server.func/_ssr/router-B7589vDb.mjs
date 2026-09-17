@@ -4,7 +4,7 @@ import { R as require_react, _ as createRootRoute, d as HeadContent, g as create
 import { r as unzipSync } from "../_libs/fflate.mjs";
 import { i as TriangleAlert } from "../_libs/lucide-react.mjs";
 import { a as union, i as string, n as number, r as object, t as literal } from "../_libs/zod.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-CW3YAV9l.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-B7589vDb.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var RP_SYSTEM = `你在为用户撰写中文视觉小说式角色扮演对白。用中文写（角色若另有语言设定则按其说话）。这是双方自愿的虚构创作，所有出场角色默认已满 18 岁成人，不要追问或强调年龄。
@@ -122,8 +122,14 @@ guro：guro, gore, blood, decapitation, dismemberment, amputee, organs, intestin
 对（对白已写砍头/血腥）：decapitation, guro, blood, gore, blood on body`;
 var IMAGE_SHOT_RULES = `【本镜】
 刚写的这一轮正文才是这一帧：姿势、镜头、正在做的事只认它。
-更早对白和长期记忆只继承还没被推翻的状态（脏污、体液、衣服破损/敞开、还在的道具和地点）。
+更早对白和长期记忆只继承还没被推翻的状态（脏污、体液、衣服破损/敞开、还在的道具）。
 不要继承已经结束的动作、体位、朝向。本镜和残留冲突时只留本镜。没在上下文里出现的状态不要发明。`;
+var IMAGE_BG_RULES = `【背景】
+主背景只有一个，以本镜对白为准。换场只用新的，不要两个地点并排。
+先看本镜和近文对白：对白里有人所在的地方或换场，就按这个写，不要去看上一镜图。
+对白完全看不出人在哪，才用下面的「上一镜地点」；没有就不要写地点，不要编。
+地点写在你输出的最前面（多人写在 base 最前）。
+不要从长期记忆抄地点。`;
 function splitChatPrompt(full) {
 	const start = full.search(/<<<PROMPT>>>/i);
 	if (start < 0) return {
@@ -148,14 +154,20 @@ function splitChatPrompt(full) {
 		ended: true
 	};
 }
-function chatImageSystem(chat) {
+function chatImageSystem(chat, prevScene = "") {
 	const format = chat.isMulti && chat.promptMode === "insert" ? `<<<PROMPT>>> 里只输出 JSON（不要 markdown）：{"base":"人数场景镜头光线","chars":{${chat.characters.map((c) => `"${c.name || c.id}":"..."`).join(",")}},"absent":[]}
 chars 的键必须逐字用角色中文名。不在镜头的放进 absent。没人离开则 absent 为 []。` : chat.isMulti ? `<<<PROMPT>>> 里只输出英文 tag 一行，用 char1: ... char2: ... 区分。禁止 JSON，禁止 ENABLED。` : `<<<PROMPT>>> 里只输出英文 tag 一行。禁止 JSON。`;
+	const adult = chat.adultBoost ? `【成人提示词加强】开。对白里的动作、部位、体液必须写成具体真 tag，写透（大约 22–40 个），不要收成 ass focus / naughty face。无关内容仍不要加。` : `【成人提示词加强】关。对白里看得见的仍写具体真 tag，不额外堆没写到的器官特写。完全没有性/血腥的场面不要加 nsfw。`;
 	return `${IMAGE_SYSTEM}
 
 ${IMAGE_SHOT_RULES}
 
-${chat.adultBoost ? `【成人提示词加强】开。对白里的动作、部位、体液必须写成具体真 tag，写透（大约 22–40 个），不要收成 ass focus / naughty face。无关内容仍不要加。` : `【成人提示词加强】关。对白里看得见的仍写具体真 tag，不额外堆没写到的器官特写。完全没有性/血腥的场面不要加 nsfw。`}
+${IMAGE_BG_RULES}
+
+上一镜地点（对白看不出人在哪时才用，只借人所在的地方）：
+${prevScene.trim() || "（无）"}
+
+${adult}
 
 【输出顺序——必须遵守，覆盖「只输出标签」】
 1. 先写完整角色扮演正文（若开启状态栏，放在正文最后）。正文里禁止出现 tag、禁止出现 <<<PROMPT>>>。
@@ -251,6 +263,14 @@ function statusBarFor(chat) {
 	const name = chat.characters[0]?.name || chat.name || "角色";
 	return (chat.statusBar || "").replaceAll("{name}", name);
 }
+/** Keep titles, drop filled descriptions — used when regenerating a reply. */
+function statusBarSkeleton(text) {
+	return text.split("\n").map((line) => {
+		const i = line.search(/[:：]/);
+		if (i < 0) return line;
+		return line.slice(0, i + 1);
+	}).join("\n");
+}
 var FIELD_LABELS = {
 	name: "名字",
 	overview: "要求总览",
@@ -288,16 +308,19 @@ function fieldPolishHint(opts) {
 		"只输出该栏正文。不要标题、不要解释、不要 JSON、不要其它栏。外貌栏只输出英文 NAI tag。"
 	].join("\n\n");
 }
-function chatContextBlock(chat) {
+function chatContextBlock(chat, opts) {
 	const chars = chat.characters.map((c, i) => characterBlock(c, chat.isMulti ? i + 1 : 0)).join("\n\n");
 	const extras = [...chat.extras, ...chat.characters.flatMap((c) => c.extras)].map((e, i) => `新增${i + 1}：${e.body}`).filter((s) => s.length > 4).join("\n");
+	const bar = statusBarFor(chat);
+	const barText = opts?.regen ? statusBarSkeleton(bar) : bar;
 	return [
 		chat.overview ? `【要求总览】\n${chat.overview}` : "",
 		chars,
 		chat.opening ? `【开场场景】\n${chat.opening}` : "",
 		extras ? `【补丁】\n${extras}` : "",
 		chat.memory ? `【长期记忆·既成事实】\n${chat.memory}` : "",
-		chat.statusBarOn ? `【状态栏开启】每轮末尾输出，模板：\n${statusBarFor(chat)}` : "【状态栏关闭】",
+		chat.statusBarOn ? `【状态栏开启】每轮末尾输出，模板：\n${barText}` : "【状态栏关闭】",
+		opts?.regen ? "【重写】这是同一拍另写一条路。禁止套用上一稿的句子、段落结构和状态栏描述。" : "",
 		chat.isMulti ? `【多人】模式=${chat.multiMode === "group" ? "群聊（角色分头像各说，最后旁白）" : "同聊（一条里写所有在场角色）"}` : ""
 	].filter(Boolean).join("\n\n");
 }
@@ -661,7 +684,7 @@ var Route$4 = createRootRoute({
 		] })]
 	})
 });
-var $$splitComponentImporter = () => import("./routes-Zp8JG0Hy.mjs").then((n) => n.l);
+var $$splitComponentImporter = () => import("./routes-h7rF3gxm.mjs").then((n) => n.f);
 var Route$3 = createFileRoute("/")({ component: lazyRouteComponent($$splitComponentImporter, "component") });
 var GROK_MODELS = {
 	"grok-4.6-high": {
@@ -1093,4 +1116,4 @@ function getRouter() {
 	});
 }
 //#endregion
-export { chatImageSystem as a, roleSnapshot as c, chatContextBlock as i, splitChatPrompt as l, FIELD_LABELS as n, fieldPolishHint as o, IMAGE_SHOT_RULES as r, groupFormatHint as s, router_exports as t };
+export { chatContextBlock as a, groupFormatHint as c, IMAGE_SHOT_RULES as i, roleSnapshot as l, FIELD_LABELS as n, chatImageSystem as o, IMAGE_BG_RULES as r, fieldPolishHint as s, router_exports as t, splitChatPrompt as u };

@@ -12,28 +12,30 @@ import {
   Sparkles,
   Wand2,
 } from "lucide-react";
-import { cachedUrl, imageUrl } from "@/lib/idb";
+import { imageUrl } from "@/lib/idb";
 import { modelLabel, samplerLabel } from "@/lib/nai";
 import { extractGrokTail } from "@/lib/nai-tags";
 import { useApp } from "@/lib/store";
 import { downloadBlob, cn } from "@/lib/utils";
-import { genPhaseLabel, stripStatus } from "@/lib/engine";
+import { foldWindow, genPhaseLabel, stripStatus } from "@/lib/engine";
+import { memoryCaughtUp } from "@/lib/chat-memory";
 import { splitDialogue, stripSpeakerPrefix } from "@/lib/rp-text";
 import { parseReplyMarkup, type ReplyFold } from "@/lib/reply-markup";
 import type { Chat, ChatMessage, GenImage, ImageGenSource, MultiMode, PromptInsertMode } from "@/lib/types";
-import { attachImage, branchFrom, editMessage, regenMessage, sendUser } from "./chat-actions";
+import { attachImage, branchFrom, cancelMemory, editMessage, regenMessage, retryMemory, sendUser } from "./chat-actions";
 import { ChatModelSelect } from "./ModelSelect";
-import { Avatar, ExpandSelect, Modal, TextArea, useCooldown } from "./ui-kit";
+import { ChatAvatar, ExpandSelect, Modal, TextArea, useCooldown } from "./ui-kit";
 
 export function ChatPane({ chat }: { chat: Chat }) {
   const cooldownUntil = useApp((s) => s.settings.cooldownUntil);
   const left = useCooldown(cooldownUntil);
   const chatImage = useApp((s) => s.settings.chatImage !== false);
   const memoryHint = useApp((s) => s.ui.memoryHint);
+  const imageTrayOffer = useApp((s) => s.ui.imageTrayOffer);
   const scroller = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [atBottom, setAtBottom] = useState(true);
-  const [draft, setDraft] = useState("");
+  const draft = useApp((s) => s.composerDrafts[chat.id] ?? "");
 
   useEffect(() => {
     const el = scroller.current;
@@ -53,11 +55,19 @@ export function ChatPane({ chat }: { chat: Chat }) {
 
   const send = () => {
     const t = draft;
-    setDraft("");
+    useApp.getState().setComposerDraft(chat.id, "");
     void sendUser(chat.id, t);
   };
 
   const portrait = chat.imageParams.height >= chat.imageParams.width;
+  const lastAssistId = [...chat.messages].reverse().find((m) => m.role !== "user")?.id;
+  const { W, I } = foldWindow();
+  const memOk = memoryCaughtUp(chat.messages.length, chat.memoryUntil || 0, W, I);
+  const memMine = memoryHint?.chatId === chat.id;
+  const memGenerating = memMine && memoryHint?.state === "generating";
+  const memOkFlash = memMine && memoryHint?.state === "ok";
+  const memFail = !memOk && !memGenerating && !memOkFlash;
+  const failReason = memMine && memoryHint?.state === "fail" ? memoryHint.error : "";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -108,8 +118,11 @@ export function ChatPane({ chat }: { chat: Chat }) {
             key={m.id}
             chat={chat}
             msg={m}
+            showImageTray={
+              Boolean(imageTrayOffer && imageTrayOffer.chatId === chat.id && imageTrayOffer.msgId === m.id && lastAssistId === m.id)
+            }
             onUseOption={(t) => {
-              setDraft(t);
+              useApp.getState().setComposerDraft(chat.id, t);
               requestAnimationFrame(() => inputRef.current?.focus());
             }}
           />
@@ -167,8 +180,27 @@ export function ChatPane({ chat }: { chat: Chat }) {
             成人提示词
           </button>
         </div>
-        {memoryHint?.chatId === chat.id && memoryHint.text ? (
-          <p className="px-[52px] pb-1 text-[12px] text-faint">{memoryHint.text}</p>
+        {memGenerating || memOkFlash || memFail ? (
+          <div className="flex items-center gap-2 px-[52px] pb-1 text-[12px]">
+            <span className={memFail ? "min-w-0 flex-1 text-danger" : memOkFlash ? "min-w-0 flex-1 text-good" : "min-w-0 flex-1 text-faint"}>
+              {memGenerating
+                ? "生成记忆中"
+                : memOkFlash
+                  ? "记忆已生成"
+                  : failReason
+                    ? `记忆生成失败（${failReason}）`
+                    : "记忆生成失败"}
+            </span>
+            {memGenerating ? (
+              <button type="button" className="shrink-0 text-muted" onClick={() => cancelMemory(chat.id)}>
+                取消
+              </button>
+            ) : memFail ? (
+              <button type="button" className="shrink-0 text-muted" onClick={() => retryMemory(chat.id)}>
+                重试
+              </button>
+            ) : null}
+          </div>
         ) : null}
         <div className="flex items-end gap-2">
           <button
@@ -186,7 +218,7 @@ export function ChatPane({ chat }: { chat: Chat }) {
           <textarea
             ref={inputRef}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => useApp.getState().setComposerDraft(chat.id, e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -222,15 +254,16 @@ function cnToggle(on: boolean) {
 function Bubble({
   chat,
   msg,
+  showImageTray,
   onUseOption,
 }: {
   chat: Chat;
   msg: ChatMessage;
+  showImageTray?: boolean;
   onUseOption?: (text: string) => void;
 }) {
   const [edit, setEdit] = useState(false);
   const [text, setText] = useState(msg.content);
-  const url = cachedUrl(chat.avatarBlobId);
   const generating = msg.role !== "user" && !msg.content;
   const names = [msg.characterName, chat.name, ...chat.characters.map((c) => c.name), "角色"];
 
@@ -267,7 +300,7 @@ function Bubble({
         className="mb-2 flex items-center gap-2"
         onClick={() => useApp.getState().beginEdit(chat.id)}
       >
-        <Avatar url={url} name={msg.characterName || chat.name} size={36} />
+        <ChatAvatar chat={chat} name={msg.characterName || chat.name} size={36} />
         <div className="text-[16px] font-semibold">{msg.characterName || chat.name}</div>
       </button>
       <div className="pl-[44px]">
@@ -299,7 +332,9 @@ function Bubble({
             }}
           />
         )}
-        {msg.images.length > 0 && <ImageBlock chat={chat} msg={msg} />}
+        {(msg.images.length > 0 || (showImageTray && !generating)) && (
+          <ImageBlock chat={chat} msg={msg} allowEmpty={Boolean(showImageTray && !generating)} />
+        )}
       </div>
     </div>
   );
@@ -421,7 +456,7 @@ function EditBox({
   );
 }
 
-function ImageBlock({ chat, msg }: { chat: Chat; msg: ChatMessage }) {
+function ImageBlock({ chat, msg, allowEmpty }: { chat: Chat; msg: ChatMessage; allowEmpty?: boolean }) {
   const chatImage = useApp((s) => s.settings.chatImage !== false);
   const done = msg.images.filter((g) => g.status === "done" && g.blobId);
   const pendingImg = msg.images.find((g) => g.status !== "done" && g.status !== "error");
@@ -441,8 +476,9 @@ function ImageBlock({ chat, msg }: { chat: Chat; msg: ChatMessage }) {
   }, [pending]);
 
   useEffect(() => {
-    if (done.length > prevDone.current && followLatest.current) {
+    if (done.length > prevDone.current) {
       setIdx(done.length - 1);
+      followLatest.current = true;
     } else if (idx >= done.length && done.length > 0) {
       setIdx(done.length - 1);
     }
@@ -476,7 +512,7 @@ function ImageBlock({ chat, msg }: { chat: Chat; msg: ChatMessage }) {
     genPhaseLabel(pendingImg?.status) ||
     (kick === "rewrite" || kick === "auto" ? "写提示词中" : kick ? "上传中" : "");
 
-  if (msg.images.length === 0) return null;
+  if (msg.images.length === 0 && !allowEmpty) return null;
 
   return (
     <div className="mt-3">
@@ -507,7 +543,7 @@ function ImageBlock({ chat, msg }: { chat: Chat; msg: ChatMessage }) {
         {current && url ? (
           <div className="relative">
             <img src={url} alt="" className="w-full" />
-            {done.length > 1 && !pending && (
+            {done.length > 1 && (
               <>
                 <button className="absolute inset-y-0 left-0 w-1/2" onClick={() => go(-1)} aria-label="上一张" />
                 <button className="absolute inset-y-0 right-0 w-1/2" onClick={() => go(1)} aria-label="下一张" />
@@ -523,8 +559,10 @@ function ImageBlock({ chat, msg }: { chat: Chat; msg: ChatMessage }) {
               <span className="flex items-center gap-2">
                 <Loader2 className="size-4 animate-spin" /> {phaseLabel || "准备中"}
               </span>
+            ) : lastError ? (
+              <span className="text-center text-danger">{genPhaseLabel("error", lastError.error)}</span>
             ) : (
-              <span className="text-center text-danger">{genPhaseLabel("error", lastError?.error)}</span>
+              <span className="text-center text-muted">还没有配图</span>
             )}
           </div>
         )}
@@ -534,9 +572,9 @@ function ImageBlock({ chat, msg }: { chat: Chat; msg: ChatMessage }) {
           icon={<RefreshCw className="size-4" />}
           label={busy === "same" && phaseLabel ? phaseLabel : "重新生成"}
           busy={busy === "same"}
-          disabled={locked}
+          disabled={locked || !current}
           onClick={() => {
-            if (locked) return;
+            if (locked || !current) return;
             setKick("same");
             void attachImage(chat.id, msg.id, "same");
           }}

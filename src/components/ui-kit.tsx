@@ -9,6 +9,9 @@ import {
 import { Check, ChevronDown, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/store";
+import { cachedUrl, imageUrl } from "@/lib/idb";
+import { firstChatImageBlob } from "@/lib/chat-avatar";
+import type { ChatMessage } from "@/lib/types";
 
 export function IconBtn({
   className,
@@ -255,7 +258,7 @@ export function ExpandSelect<T extends string>({
   menu,
 }: {
   value: T;
-  options: { id: T; label: string; short?: string }[];
+  options: { id: T; label: string; short?: string; header?: boolean; danger?: boolean }[];
   onChange: (id: T) => void;
   render?: (id: T, label: string) => ReactNode;
   className?: string;
@@ -280,7 +283,8 @@ export function ExpandSelect<T extends string>({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "inline-flex h-9 items-center gap-1 rounded-full px-3 text-[14px] font-medium text-ink",
+          "inline-flex h-9 items-center gap-1 rounded-full px-3 text-[14px] font-medium",
+          current?.danger ? "text-danger" : "text-ink",
           align === "center" ? "justify-center" : "w-full justify-between",
         )}
       >
@@ -297,23 +301,30 @@ export function ExpandSelect<T extends string>({
           )}
         >
           <div className="max-h-[50vh] overflow-auto scroll-thin">
-            {options.map((o) => (
-              <button
-                key={o.id}
-                type="button"
-                onClick={() => {
-                  onChange(o.id);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center gap-2 px-4 py-3 text-left text-[14px]",
-                  o.id === value ? "bg-dim/70 font-medium" : "hover:bg-surface",
-                )}
-              >
-                <span className="min-w-0 flex-1 truncate">{o.label}</span>
-                {o.id === value && <Check className="size-4 shrink-0 text-primary" />}
-              </button>
-            ))}
+            {options.map((o) =>
+              o.header ? (
+                <div key={o.id} className="px-4 py-1.5 text-center text-[12px] font-medium text-good">
+                  {o.label}
+                </div>
+              ) : (
+                <button
+                  key={o.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(o.id);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "flex w-full items-center gap-2 px-4 py-3 text-left text-[14px]",
+                    o.danger && "text-danger",
+                    o.id === value ? "bg-dim/70 font-medium" : "hover:bg-surface",
+                  )}
+                >
+                  <span className="min-w-0 flex-1 truncate">{o.label}</span>
+                  {o.id === value && <Check className={cn("size-4 shrink-0", o.danger ? "text-danger" : "text-primary")} />}
+                </button>
+              ),
+            )}
           </div>
         </div>
       )}
@@ -432,4 +443,43 @@ export function Avatar({
       {url ? <img src={url} alt="" className="size-full object-cover" /> : ch}
     </div>
   );
+}
+
+export function useBlobUrl(id?: string | null) {
+  const [url, setUrl] = useState<string | null>(() => cachedUrl(id));
+  useEffect(() => {
+    let gone = false;
+    if (!id) {
+      setUrl(null);
+      return;
+    }
+    const hit = cachedUrl(id);
+    if (hit) {
+      setUrl(hit);
+      return;
+    }
+    setUrl(null);
+    void imageUrl(id).then((u) => {
+      if (!gone) setUrl(u);
+    });
+    return () => {
+      gone = true;
+    };
+  }, [id]);
+  return url;
+}
+
+export function ChatAvatar({
+  chat,
+  name,
+  size,
+  dim,
+}: {
+  chat: { name: string; avatarBlobId?: string; messages: ChatMessage[] };
+  name?: string;
+  size?: number;
+  dim?: boolean;
+}) {
+  const url = useBlobUrl(firstChatImageBlob(chat));
+  return <Avatar url={url} name={name ?? chat.name} size={size} dim={dim} />;
 }

@@ -1,6 +1,7 @@
 import {
   afterPaint,
   chatContextBlock,
+  foldWindow,
   generateNai,
   groupFormatHint,
   historyMessages,
@@ -19,9 +20,9 @@ import { grokStream } from "@/lib/grok-client";
 import { sanitizeNaiTags, extractGrokTail } from "@/lib/nai-tags";
 import { COOLDOWN_MS } from "@/lib/constants";
 import { useApp } from "@/lib/store";
-import { shotAndResidual } from "@/lib/user-markup";
+import { shotAndResidual, previousRoundImagePrompt } from "@/lib/user-markup";
 import { presetStyle } from "@/lib/st-preset";
-import { applySnaps, pushSnap, rewindSnaps } from "@/lib/chat-memory";
+import { applySnaps, foldCoveredEnd, memoryCaughtUp, memoryFailReason, pushSnap, rewindSnaps } from "@/lib/chat-memory";
 import { chatImageSystem } from "@/lib/prompts";
 import { resolveImageWrite } from "@/lib/image-ai";
 import type { Chat, ChatMessage, GenImage, ImageGenSource } from "@/lib/types";
@@ -31,6 +32,7 @@ const aborts = new Map<string, AbortController>();
 const busy = new Set<string>();
 const memoryEpoch = new Map<string, number>();
 const memoryBusy = new Set<string>();
+const memoryAborts = new Map<string, AbortController>();
 
 function chat(id: string) {
   return useApp.getState().chats.find((c) => c.id === id);
@@ -71,6 +73,26 @@ export function abortChat(id: string) {
 
 export function invalidateMemory(id: string) {
   bumpMemoryEpoch(id);
+  memoryAborts.get(id)?.abort();
+  memoryAborts.delete(id);
+  memoryBusy.delete(id);
+  const hint = useApp.getState().ui.memoryHint;
+  if (hint?.chatId === id && hint.state === "generating") useApp.getState().setUI({ memoryHint: null });
+}
+
+export function cancelMemory(id: string) {
+  memoryAborts.get(id)?.abort();
+  memoryAborts.delete(id);
+  bumpMemoryEpoch(id);
+  memoryBusy.delete(id);
+  const hint = useApp.getState().ui.memoryHint;
+  if (!hint || hint.chatId === id) {
+    useApp.getState().setUI({ memoryHint: { chatId: id, state: "fail", error: "已取消" } });
+  }
+}
+
+export function retryMemory(id: string) {
+  void runMemory(id);
 }
 
 export async function regenMessage(id: string, msgId: string) {
@@ -87,7 +109,7 @@ export async function regenMessage(id: string, msgId: string) {
   }));
   bumpMemoryEpoch(id);
   const lastUser = [...cut].reverse().find((m) => m.role === "user");
-  await runReply(id, lastUser?.content ?? null, cut.length === 0);
+  await runReply(id, lastUser?.content ?? null, cut.length === 0, true);
 }
 
 export async function branchFrom(id: string, msgId: string) {
@@ -171,12 +193,12 @@ function ensureWritingImage(id: string, placeholder: ChatMessage) {
   }));
 }
 
-async function runReply(id: string, _userText: string | null, opening: boolean) {
+async function runReply(id: string, _userText: string | null, opening: boolean, regen = false) {
   const c0 = chat(id);
   if (!c0) return;
   const grokModelId = useApp.getState().settings.grokModelId;
   const wantImage = imageOn();
-  const imageInChat = wantImage && !resolveImageWrite(c0.imageModelId).split;
+  const imageInChat = wantImage && !resolveImageWrite(useApp.getState().settings.imageModelId).split;
   const ctrl = new AbortController();
   aborts.set(id, ctrl);
   busy.add(id);
@@ -184,7 +206,7 @@ async function runReply(id: string, _userText: string | null, opening: boolean) 
   patch(id, (c) => ({ ...c, messages: [...c.messages, placeholder] }));
 
   const extra = [
-    chatContextBlock(c0),
+    chatContextBlock(c0, { regen }),
     groupFormatHint(c0, imageInChat),
     opening ? "这是开场。根据开场场景，以角色口吻先说第一句。不要以用户身份说话。" : "",
   ]
@@ -192,6 +214,7 @@ async function runReply(id: string, _userText: string | null, opening: boolean) 
     .join("\n\n");
 
   const live = chat(id)!;
+  const prevScene = previousRoundImagePrompt(live.messages, placeholder.id);
   const msgs = historyMessages(live).filter((m) => m.content);
   if (opening && msgs.length === 0) {
     msgs.push({ role: "user", content: "（开始场景，请角色先开口）" });
@@ -206,7 +229,7 @@ async function runReply(id: string, _userText: string | null, opening: boolean) 
         task: "chat",
         grokModelId,
         extraSystem: extra,
-        imageSystem: imageInChat ? chatImageSystem(c0) : undefined,
+        imageSystem: imageInChat ? chatImageSystem(c0, prevScene) : undefined,
         messages: msgs,
         ...presetStyle(useApp.getState().settings, "chat", c0),
       },
@@ -250,7 +273,7 @@ async function runReply(id: string, _userText: string | null, opening: boolean) 
   const visibleOk = Boolean(split.visible.trim() || assist?.content.trim());
 
   if (wantImage && assist && visibleOk) {
-    const splitWrite = resolveImageWrite(latest.imageModelId).split;
+    const splitWrite = resolveImageWrite(useApp.getState().settings.imageModelId).split;
     if (splitWrite) {
       void attachImage(id, assist.id, "rewrite", undefined, undefined, undefined, split.visible);
     } else {
@@ -355,7 +378,8 @@ export async function attachImage(
       } else {
         const live = chat(id) ?? c;
         const { shot, residual } = shotAndResidual(live.messages, msgId, shotText);
-        const tags = await writeImageTags(live, residual, useApp.getState().settings.grokModelId, shot || msg.content);
+        const prevScene = previousRoundImagePrompt(live.messages, msgId);
+        const tags = await writeImageTags(live, residual, useApp.getState().settings.grokModelId, shot || msg.content, prevScene);
         grokTail = tags.base;
         charTails = mapCharTails(live, tags.chars);
         applyAbsent(id, tags.absent);
@@ -421,37 +445,147 @@ function applyAbsent(id: string, absent: string[] | undefined) {
   }));
 }
 
-function setMemoryHint(chatId: string, text: string | null) {
-  useApp.getState().setUI({ memoryHint: text ? { chatId, text } : null });
+function setMemoryHint(
+  chatId: string,
+  state: "generating" | "ok" | "fail" | null,
+  extra?: { error?: string; draft?: string },
+) {
+  if (!state) {
+    useApp.getState().setUI({ memoryHint: null });
+    return;
+  }
+  const prev = useApp.getState().ui.memoryHint;
+  const keepDraft = state === "generating" && prev?.chatId === chatId ? prev.draft : undefined;
+  useApp.getState().setUI({
+    memoryHint: {
+      chatId,
+      state,
+      error: extra?.error,
+      draft: extra?.draft ?? keepDraft,
+    },
+  });
+}
+
+function onMemoryDelta(id: string) {
+  return (t: string) => {
+    const hint = useApp.getState().ui.memoryHint;
+    if (hint?.chatId === id && hint.state === "generating") {
+      useApp.getState().setUI({ memoryHint: { ...hint, draft: t } });
+    }
+  };
 }
 
 async function maybeMemory(id: string) {
+  void runMemory(id);
+}
+
+async function runMemory(id: string) {
   const c = chat(id);
   if (!c) return;
+  const { W, I } = foldWindow();
+  if (memoryCaughtUp(c.messages.length, c.memoryUntil || 0, W, I)) return;
   const slice = nextFoldSlice(c);
   if (!slice) return;
   if (memoryBusy.has(id)) return;
   const nAtStart = c.messages.length;
   const epoch = memoryEpoch.get(id) ?? 0;
+  const ctrl = new AbortController();
+  memoryAborts.set(id, ctrl);
   memoryBusy.add(id);
-  setMemoryHint(id, "生成记忆中");
+  setMemoryHint(id, "generating", { draft: "" });
   try {
-    const mem = await summarizeMemory(c, useApp.getState().settings.grokModelId, c.messages.slice(slice.start, slice.end), c.memory);
+    const mem = await summarizeMemory(
+      c,
+      useApp.getState().settings.grokModelId,
+      c.messages.slice(slice.start, slice.end),
+      c.memory,
+      ctrl.signal,
+      onMemoryDelta(id),
+    );
     if ((memoryEpoch.get(id) ?? 0) !== epoch) return;
     const live = chat(id);
     if (!live) return;
     if (live.messages.length < slice.end) return;
     const snap = { covered: slice.end, text: mem, foldAt: nAtStart };
     patch(id, (ch) => ({ ...ch, ...applySnaps(pushSnap(ch.memorySnaps, snap)) }));
-    setMemoryHint(id, "记忆已生成");
+    setMemoryHint(id, "ok");
     setTimeout(() => {
       const ui = useApp.getState().ui.memoryHint;
-      if (ui?.chatId === id && ui.text === "记忆已生成") setMemoryHint(id, null);
+      if (ui?.chatId === id && ui.state === "ok") setMemoryHint(id, null);
     }, 1000);
-  } catch {
+  } catch (e) {
+    if ((e as Error).name === "AbortError") return;
     if ((memoryEpoch.get(id) ?? 0) !== epoch) return;
-    setMemoryHint(id, null);
+    setMemoryHint(id, "fail", { error: memoryFailReason(e) });
   } finally {
+    if (memoryAborts.get(id) === ctrl) memoryAborts.delete(id);
+    memoryBusy.delete(id);
+  }
+}
+
+export async function runManualMemory(id: string, mode: "current" | "all") {
+  const c = chat(id);
+  if (!c) return false;
+  const { W, I } = foldWindow();
+  const n = c.messages.length;
+  const needed = foldCoveredEnd(n, W, I);
+  if (needed < 2) {
+    useApp.getState().toast("还不够长，先多聊几轮");
+    return false;
+  }
+  memoryAborts.get(id)?.abort();
+  memoryAborts.delete(id);
+  memoryBusy.delete(id);
+  const epoch = (memoryEpoch.get(id) ?? 0) + 1;
+  memoryEpoch.set(id, epoch);
+  const ctrl = new AbortController();
+  memoryAborts.set(id, ctrl);
+  memoryBusy.add(id);
+  setMemoryHint(id, "generating", { draft: "" });
+  try {
+    const grok = useApp.getState().settings.grokModelId;
+    const snaps = c.memorySnaps ?? [];
+    const delta = onMemoryDelta(id);
+    if (mode === "all") {
+      const text = await summarizeMemory(c, grok, c.messages.slice(0, needed), "（无）", ctrl.signal, delta);
+      patch(id, (ch) => ({ ...ch, ...applySnaps([{ covered: needed, text, foldAt: n }]) }));
+    } else if (memoryCaughtUp(n, c.memoryUntil || 0, W, I)) {
+      const last = snaps[snaps.length - 1];
+      if (!last || last.covered < 2) {
+        useApp.getState().toast("还没有可重压的那一截");
+        setMemoryHint(id, null);
+        return false;
+      }
+      const prev = snaps[snaps.length - 2];
+      const start = prev?.covered ?? 0;
+      const text = await summarizeMemory(c, grok, c.messages.slice(start, last.covered), prev?.text ?? "（无）", ctrl.signal, delta);
+      patch(id, (ch) => ({
+        ...ch,
+        ...applySnaps(pushSnap(ch.memorySnaps, { covered: last.covered, text, foldAt: last.foldAt })),
+      }));
+    } else {
+      const start = c.memoryUntil || 0;
+      const text = await summarizeMemory(c, grok, c.messages.slice(start, needed), c.memory || "（无）", ctrl.signal, delta);
+      patch(id, (ch) => ({
+        ...ch,
+        ...applySnaps(pushSnap(ch.memorySnaps, { covered: needed, text, foldAt: n })),
+      }));
+    }
+    if ((memoryEpoch.get(id) ?? 0) !== epoch) return false;
+    setMemoryHint(id, "ok");
+    setTimeout(() => {
+      const ui = useApp.getState().ui.memoryHint;
+      if (ui?.chatId === id && ui.state === "ok") setMemoryHint(id, null);
+    }, 1000);
+    return true;
+  } catch (e) {
+    if ((e as Error).name === "AbortError") return false;
+    const reason = memoryFailReason(e);
+    useApp.getState().toast(reason === "请求失败" ? "总结失败，旧备忘还在" : `总结失败：${reason}`);
+    setMemoryHint(id, "fail", { error: reason });
+    return false;
+  } finally {
+    if (memoryAborts.get(id) === ctrl) memoryAborts.delete(id);
     memoryBusy.delete(id);
   }
 }

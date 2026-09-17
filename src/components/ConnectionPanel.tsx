@@ -87,7 +87,21 @@ export function ConnectionPanel() {
           <span className="flex items-center gap-1.5 text-[13px] text-muted">
             <Switch
               on={settings.chatImage !== false}
-              onChange={(v) => useApp.getState().setSettings({ chatImage: v })}
+              onChange={(v) => {
+                const app = useApp.getState();
+                app.setSettings({ chatImage: v });
+                if (!v) {
+                  app.setUI({ imageTrayOffer: null });
+                  return;
+                }
+                const c = app.current();
+                const last = c ? [...c.messages].reverse().find((m) => m.role !== "user") : undefined;
+                if (c && last && last.images.length === 0) {
+                  app.setUI({ imageTrayOffer: { chatId: c.id, msgId: last.id } });
+                } else {
+                  app.setUI({ imageTrayOffer: null });
+                }
+              }}
               label="生图"
             />
             生图

@@ -1,21 +1,24 @@
 import { i as __toESM, n as __exportAll } from "../_runtime.mjs";
-import { $ as shortModelLabel, A as downloadBlob, B as migrateGrokId, C as chatPickerModels, D as defaultPureParams, E as defaultImageParams, F as imageUrl, G as presetStyle, H as nearestScroller, I as indexFromY, J as randomSeed, K as pruneStarred, L as joinPromptParts, N as imageAiLabel, O as defaultSettings, P as imagePickerModels, Q as samplerPatch, R as llmIdentity, S as cachedUrl, T as db, U as normalizePureParams, V as moveId, W as parseChatCompletionPreset, X as resolveImageWrite, Y as rememberUrl, Z as restoreSampler, _ as UNCENSORED_TAG, a as DEFAULT_STATUS_BAR, b as applyLlmPick, c as FURRY_TAG, d as NOISE_SCHEDULES, et as snapshotLlmAccount, f as PLACEHOLDERS, g as UC, h as SENSITIVE_PREFIX, i as DEFAULT_NAI_BASE, j as emptyCharacter, k as deleteImage, l as GROK_MODELS, m as SAMPLERS, n as DEFAULT_GROK, nt as uniqueNumberedName, o as FOLLOW_IMAGE_AI, p as RESOLUTIONS, q as putImage, r as DEFAULT_LLM_PARAMS, rt as uniquePresetName, s as FULLBODY_TAG, t as COOLDOWN_MS, tt as uid, u as NAI_MODELS, v as activePreset, w as cn, x as autoScrollNearEdge, y as applyImageAiPick, z as loadAll } from "./idb-ic1T74Kn.mjs";
+import { $ as samplerPatch, A as downloadBlob, B as loadAll, C as chatPickerModels, D as defaultPureParams, E as defaultImageParams, F as imageUrl, G as parseChatCompletionPreset, H as moveId, I as imageWriteFields, J as putImage, K as presetStyle, L as indexFromY, N as imageAiLabel, O as defaultSettings, P as imagePickerModels, Q as restoreSampler, R as joinPromptParts, S as cachedUrl, T as db, U as nearestScroller, V as migrateGrokId, W as normalizePureParams, X as rememberUrl, Y as randomSeed, Z as resolveImageWrite, _ as UNCENSORED_TAG, a as DEFAULT_STATUS_BAR, b as applyLlmPick, c as FURRY_TAG, d as NOISE_SCHEDULES, et as shortModelLabel, f as PLACEHOLDERS, g as UC, h as SENSITIVE_PREFIX, i as DEFAULT_NAI_BASE, it as uniquePresetName, j as emptyCharacter, k as deleteImage, l as GROK_MODELS, m as SAMPLERS, n as DEFAULT_GROK, nt as uid, o as FOLLOW_IMAGE_AI, p as RESOLUTIONS, q as pruneStarred, r as DEFAULT_LLM_PARAMS, rt as uniqueNumberedName, s as FULLBODY_TAG, t as COOLDOWN_MS, tt as snapshotLlmAccount, u as NAI_MODELS, v as activePreset, w as cn, x as autoScrollNearEdge, y as applyImageAiPick, z as llmIdentity } from "./idb-BhegYRS5.mjs";
 import { R as require_react, l as require_react_dom, y as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
 import { i as zipSync, n as strToU8, r as unzipSync, t as strFromU8 } from "../_libs/fflate.mjs";
 import { A as ChevronLeft, C as FileUp, D as Clock, E as Copy, F as ArrowDown, I as AlignJustify, M as Check, N as Bookmark, O as ChevronUp, P as ArrowUp, S as FolderInput, T as Download, _ as Lock, a as Trash2, b as Folder, c as Sparkles, d as ScanSearch, f as RefreshCw, g as Menu, h as Moon, j as ChevronDown, k as ChevronRight, l as SlidersHorizontal, m as Pencil, n as WandSparkles, o as Sun, p as Plus, r as Upload, s as Star, t as X, u as Settings, v as LoaderCircle, w as Ellipsis, x as FolderPlus, y as GitBranch } from "../_libs/lucide-react.mjs";
-import { a as chatImageSystem, c as roleSnapshot, i as chatContextBlock, l as splitChatPrompt, n as FIELD_LABELS, o as fieldPolishHint, r as IMAGE_SHOT_RULES, s as groupFormatHint } from "./router-CW3YAV9l.mjs";
+import { a as chatContextBlock, c as groupFormatHint, i as IMAGE_SHOT_RULES, l as roleSnapshot, n as FIELD_LABELS, o as chatImageSystem, r as IMAGE_BG_RULES, s as fieldPolishHint, u as splitChatPrompt } from "./router-B7589vDb.mjs";
 import { t as create } from "../_libs/zustand.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-Zp8JG0Hy.js
-var routes_Zp8JG0Hy_exports = /* @__PURE__ */ __exportAll({
-	a: () => invalidateMemory,
-	c: () => sendUser,
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-h7rF3gxm.js
+var routes_h7rF3gxm_exports = /* @__PURE__ */ __exportAll({
+	a: () => editMessage,
+	c: () => retryMemory,
 	component: () => Home,
-	i: () => editMessage,
+	d: () => sendUser,
+	i: () => cancelMemory,
+	l: () => runManualMemory,
 	n: () => attachImage,
-	o: () => regenMessage,
+	o: () => invalidateMemory,
 	r: () => branchFrom,
-	s: () => sendOpening,
-	t: () => abortChat
+	s: () => regenMessage,
+	t: () => abortChat,
+	u: () => sendOpening
 });
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
@@ -1145,28 +1148,28 @@ function foldIntervalMessages(contextTurns) {
 function firstFoldAt(windowMsgs, intervalMsgs) {
 	return Math.max(intervalMsgs, windowMsgs - 2);
 }
-/** Next chunk to compress, or null if not yet. */
-function planFold(n, covered, foldAt, windowMsgs, intervalMsgs) {
-	const I = intervalMsgs;
-	if (n < firstFoldAt(windowMsgs, I) || I < 2) return null;
-	if (foldAt > 0 && n < foldAt + I) return null;
-	if (covered <= 0) return {
-		start: 0,
-		end: Math.min(I, n)
-	};
-	const end = covered + I;
-	if (end > n) return null;
-	return {
-		start: covered,
-		end
-	};
-}
 /** How far the current line should be covered if every fold had succeeded. */
 function foldCoveredEnd(n, windowMsgs, intervalMsgs) {
 	const firstAt = firstFoldAt(windowMsgs, intervalMsgs);
 	if (n < firstAt || intervalMsgs < 2) return 0;
 	const k = 1 + Math.floor((n - firstAt) / intervalMsgs);
 	return Math.min(k * intervalMsgs, n);
+}
+/** True when memory has reached the target for this length. Opening / too-short is caught up. */
+function memoryCaughtUp(n, covered, windowMsgs, intervalMsgs) {
+	return covered >= foldCoveredEnd(n, windowMsgs, intervalMsgs);
+}
+/** Next auto chunk while behind. One interval (or the remaining gap if smaller). */
+function nextAutoSlice(n, covered, windowMsgs, intervalMsgs) {
+	const needed = foldCoveredEnd(n, windowMsgs, intervalMsgs);
+	if (covered >= needed || needed < 2) return null;
+	const start = Math.max(0, covered);
+	const end = Math.min(needed, start === 0 ? Math.min(intervalMsgs, needed) : start + intervalMsgs);
+	if (end - start < 2 || end > n) return null;
+	return {
+		start,
+		end
+	};
 }
 /** Display turns: a user+assistant pair. The opening assistant is the leftover 1. */
 function memoryTurnStats(messageCount, covered) {
@@ -1280,10 +1283,19 @@ var useApp = create((set, get) => ({
 		};
 		const savedId = currentRow?.value || null;
 		const currentId = live.some((c) => c.id === savedId) ? savedId : live.sort((a, b) => b.updatedAt - a.updatedAt)[0]?.id ?? null;
+		const lifted = liftImageAi(settings, live, currentId);
+		const nextSettings = {
+			...settings,
+			...lifted
+		};
+		if (!settings.imageModelId && !settings.imageModelPin && (lifted.imageModelId || lifted.imageModelPin)) db.kv.put({
+			key: "settings",
+			value: nextSettings
+		});
 		set({
 			ready: true,
 			...data,
-			settings,
+			settings: nextSettings,
 			chats: live,
 			favorites: (data.favorites ?? []).map(migrateFavorite).filter(Boolean),
 			pureParams: normalizePureParams(pureRow?.value ?? defaultPureParams()),
@@ -1323,17 +1335,10 @@ var useApp = create((set, get) => ({
 		if (cur) get().patchChat(cur.id, { grokModelId: id });
 	},
 	clearImageAi: () => {
-		set((s) => ({ chats: s.chats.map((c) => {
-			if (!c.imageModelId && !c.imageModelPin) return c;
-			const next = {
-				...c,
-				imageModelId: null,
-				imageModelPin: null,
-				updatedAt: Date.now()
-			};
-			persistChat(next);
-			return next;
-		}) }));
+		get().setSettings({
+			imageModelId: null,
+			imageModelPin: null
+		});
 	},
 	current: () => get().chats.find((c) => c.id === get().currentId),
 	patchChat: (id, p) => {
@@ -1869,7 +1874,16 @@ var useApp = create((set, get) => ({
 		});
 	},
 	addFavorite: (blobId) => {
-		const params = structuredClone(get().pureParams);
+		const hist = blobId ? get().history.find((h) => h.blobId === blobId) : void 0;
+		const params = hist?.params ? {
+			...structuredClone(hist.params),
+			seed: hist.seed,
+			seedLocked: true
+		} : (() => {
+			const p = structuredClone(get().pureParams);
+			if (p.seed != null) p.seedLocked = true;
+			return p;
+		})();
 		const f = {
 			id: uid("fav_"),
 			name: presetNameFrom(params),
@@ -1928,6 +1942,17 @@ var useApp = create((set, get) => ({
 	},
 	setCooldown: (until) => get().setSettings({ cooldownUntil: until })
 }));
+function liftImageAi(settings, chats, currentId) {
+	if (settings.imageModelId || settings.imageModelPin) return {
+		imageModelId: settings.imageModelId ?? null,
+		imageModelPin: settings.imageModelPin ?? null
+	};
+	const hit = [chats.find((c) => c.id === currentId), ...chats].find((c) => c && (c.imageModelId || c.imageModelPin));
+	return {
+		imageModelId: hit?.imageModelId ?? null,
+		imageModelPin: hit?.imageModelPin ?? null
+	};
+}
 function blobInUse(s, blobId, skipFav) {
 	if (s.favorites.some((f) => f.blobId === blobId && f.id !== skipFav)) return true;
 	if (s.history.some((h) => h.blobId === blobId)) return true;
@@ -1999,7 +2024,7 @@ async function readJsonError(res, fallback) {
 		return fallback;
 	}
 }
-async function grokOnce(body) {
+async function grokOnce(body, signal) {
 	const s = useApp.getState().settings;
 	const presetOn = Boolean(s.stActiveId);
 	const viaBody = body.via;
@@ -2023,7 +2048,8 @@ async function grokOnce(body) {
 				...rest,
 				stream: false,
 				max_tokens: rest.max_tokens ?? s.llmParams.maxTokens
-			})
+			}),
+			signal
 		});
 		const data = await res.json();
 		if (!res.ok || !data.ok) throw new Error(data.error || `请求失败 ${res.status}`);
@@ -2036,7 +2062,8 @@ async function grokOnce(body) {
 			...rest,
 			stream: false,
 			params: presetOn ? s.llmParams : void 0
-		})
+		}),
+		signal
 	});
 	const data = await res.json();
 	if (!res.ok || !data.ok) throw new Error(data.error || `Grok 请求失败 ${res.status}`);
@@ -2328,6 +2355,17 @@ function shotAndResidual(messages, msgId, shotOverride) {
 		shot: (shotOverride ?? (msg ? replyStoryText(msg.content) : "")).trim(),
 		residual: recentSceneForImage(before, 4)
 	};
+}
+/** Immediate previous assistant/narrator only. Empty if that round has no successful image. */
+function previousRoundImagePrompt(messages, msgId) {
+	const idx = messages.findIndex((m) => m.id === msgId);
+	const from = idx >= 0 ? idx - 1 : messages.length - 1;
+	for (let i = from; i >= 0; i--) {
+		const m = messages[i];
+		if (m.role !== "assistant" && m.role !== "narrator") continue;
+		return ([...m.images || []].reverse().find((g) => g.status === "done" && g.prompt)?.prompt || "").trim();
+	}
+	return "";
 }
 function escapeRegExp(s) {
 	return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -2637,32 +2675,37 @@ async function polishField(chat, grokModelId, field, instruction, charId) {
 		...presetStyle(useApp.getState().settings, "field", chat)
 	}), field);
 }
-async function summarizeMemory(chat, grokModelId, slice, previous) {
+async function summarizeMemory(chat, grokModelId, slice, previous, signal) {
 	const keep = recentWindow();
 	const older = slice ?? chat.messages.slice(0, Math.max(0, chat.messages.length - keep));
 	if (older.length < 2) throw new Error("memory-skip");
 	const dialog = formatMemoryDialog(older);
 	if (!dialog.trim()) throw new Error("memory-skip");
-	const clipped = clipMemoryText(await grokOnce({
+	const s = useApp.getState().settings;
+	const dest = resolveImageWrite(s.imageModelId);
+	const payload = {
 		task: "memory",
 		grokModelId,
+		...imageWriteFields(s.imageModelId),
 		messages: [{
 			role: "user",
 			content: `上一份备忘：\n${previous ?? chat.memory ?? "（无）"}\n\n需要收进去的对白：\n${dialog}`
 		}]
-	}));
+	};
+	if (!dest.split) payload.grokModelId = grokModelId;
+	const clipped = clipMemoryText(await grokOnce(payload, signal));
 	if (!isPlausibleMemory(clipped)) throw new Error("memory-invalid");
 	return clipped;
 }
 function nextFoldSlice(chat) {
 	const { W, I } = foldWindow();
-	return planFold(chat.messages.length, chat.memoryUntil || 0, chat.memoryFoldAt || 0, W, I);
+	return nextAutoSlice(chat.messages.length, chat.memoryUntil || 0, W, I);
 }
 function imageBrief(chat, opts) {
 	const names = chat.characters.map((c) => c.name).filter(Boolean).join("、");
 	const roster = chat.characters.map((c, i) => `${i + 1}. ${c.name || `角色${i + 1}`}`).join("\n");
-	const format = chat.isMulti && chat.promptMode === "insert" ? `输出 JSON（不要 markdown）：{"base":"人数场景镜头光线","chars":{${chat.characters.map((c) => `"${c.name || c.id}":"..."`).join(",")}},"absent":[]}
-chars 的键必须逐字用上面的角色名。不在镜头的角色放进 absent，不要写进 chars。没人离开则 absent 为 []。` : chat.isMulti ? "只输出英文 tag 一行，用 char1: ... char2: ... 区分。禁止 JSON，禁止 ENABLED。" : "只输出英文 tag 一行。禁止 JSON。";
+	const format = chat.isMulti && chat.promptMode === "insert" ? `输出 JSON（不要 markdown）：{"base":"地点写最前，然后人数场景镜头光线","chars":{${chat.characters.map((c) => `"${c.name || c.id}":"..."`).join(",")}},"absent":[]}
+chars 的键必须逐字用上面的角色名。不在镜头的角色放进 absent，不要写进 chars。没人离开则 absent 为 []。` : chat.isMulti ? "只输出英文 tag 一行，地点写最前，用 char1: ... char2: ... 区分。禁止 JSON，禁止 ENABLED。" : "只输出英文 tag 一行，地点写最前。禁止 JSON。";
 	const shot = (opts.shot || "").trim();
 	const residual = (opts.residual || opts.last || "").trim();
 	return `角色：${names || "（未命名）"}
@@ -2673,6 +2716,8 @@ ${chat.isMulti ? `角色名单：\n${roster}` : ""}
 
 ${IMAGE_SHOT_RULES}
 
+${IMAGE_BG_RULES}
+
 写法：先抽出本镜里最显眼的动作/部位，写成具体真 tag，不要收成 ass focus、naughty face 这种安全词。空格真 tag，禁止下划线。不要写画师质量词和外貌。
 用户已发生的动作优先于角色回里写软了的版本，必须写成已经发生，不要停在入口。
 成人开着：把画面写透、写够，不要保守。「不要硬塞」只挡住完全无关的内容。
@@ -2682,8 +2727,11 @@ ${IMAGE_SHOT_RULES}
 本镜（姿势、镜头、正在做的事只认这段）：
 ${shot || "（无）"}
 
-${chat.memory.trim() ? `长期记忆（只继承没被推翻的状态）：\n${chat.memory.trim()}\n` : ""}残留参考（不要继承已结束的动作/体位/朝向）：
+${chat.memory.trim() ? `长期记忆（只继承没被推翻的状态，不含地点）：\n${chat.memory.trim()}\n` : ""}残留参考（不要继承已结束的动作/体位/朝向）：
 ${residual || "（无）"}
+
+上一镜地点（对白看不出人在哪时才用，只借人所在的地方）：
+${(opts.prevScene || "").trim() || "（无）"}
 
 ${format}`;
 }
@@ -2721,9 +2769,10 @@ function parseImageTagOutput(text, chat) {
 		absent: []
 	};
 }
-async function writeImageTags(chat, lastText, grokModelId, shotText) {
+async function writeImageTags(chat, lastText, grokModelId, shotText, prevScene) {
 	const extra = chat.adultBoost ? "成人提示词加强：开。这是最高优先级之一。对白里的动作、部位、体液必须写成具体真 tag，写透（22–40 个），不要收成 ass focus / naughty face。无关内容仍不要加。只输出标签，不要解释。" : "成人提示词加强：关。对白里看得见的仍写具体真 tag，不要额外堆没写到的器官特写。完全没有性/血腥的场面不要加 nsfw。只输出标签，不要解释。";
-	const dest = resolveImageWrite(chat.imageModelId);
+	const imageModelId = useApp.getState().settings.imageModelId;
+	const dest = resolveImageWrite(imageModelId);
 	const payload = {
 		task: "image",
 		extraSystem: extra,
@@ -2731,19 +2780,14 @@ async function writeImageTags(chat, lastText, grokModelId, shotText) {
 			role: "user",
 			content: imageBrief(chat, {
 				shot: shotText,
-				residual: lastText
+				residual: lastText,
+				prevScene
 			})
 		}],
-		max_tokens: 900
+		max_tokens: 900,
+		...imageWriteFields(imageModelId)
 	};
 	if (!dest.split) payload.grokModelId = grokModelId;
-	else if (dest.via === "grok") {
-		payload.via = "grok";
-		payload.grokModelId = dest.grokModelId;
-	} else {
-		payload.via = "api";
-		payload.model = dest.model;
-	}
 	return parseImageTagOutput(await grokOnce(payload), chat);
 }
 function genPhaseLabel(status, error) {
@@ -2876,6 +2920,7 @@ var aborts = /* @__PURE__ */ new Map();
 var busy = /* @__PURE__ */ new Set();
 var memoryEpoch = /* @__PURE__ */ new Map();
 var memoryBusy = /* @__PURE__ */ new Set();
+var memoryAborts = /* @__PURE__ */ new Map();
 function chat(id) {
 	return useApp.getState().chats.find((c) => c.id === id);
 }
@@ -2910,6 +2955,19 @@ function abortChat(id) {
 }
 function invalidateMemory(id) {
 	bumpMemoryEpoch(id);
+	memoryAborts.get(id)?.abort();
+	memoryAborts.delete(id);
+	memoryBusy.delete(id);
+}
+function cancelMemory(id) {
+	memoryAborts.get(id)?.abort();
+	memoryAborts.delete(id);
+	bumpMemoryEpoch(id);
+	memoryBusy.delete(id);
+	if (useApp.getState().ui.memoryHint?.chatId === id) useApp.getState().setUI({ memoryHint: null });
+}
+function retryMemory(id) {
+	runMemory(id);
 }
 async function regenMessage(id, msgId) {
 	abortChat(id);
@@ -2924,7 +2982,7 @@ async function regenMessage(id, msgId) {
 		...applySnaps(rewindSnaps(ch.memorySnaps, cut.length))
 	}));
 	bumpMemoryEpoch(id);
-	await runReply(id, [...cut].reverse().find((m) => m.role === "user")?.content ?? null, cut.length === 0);
+	await runReply(id, [...cut].reverse().find((m) => m.role === "user")?.content ?? null, cut.length === 0, true);
 }
 async function branchFrom(id, msgId) {
 	const c = chat(id);
@@ -2947,7 +3005,7 @@ async function branchFrom(id, msgId) {
 		chats: [...s.chats, copy],
 		currentId: copy.id
 	}));
-	const { db } = await import("./idb-ic1T74Kn.mjs").then((n) => n.M).then((n) => n.a);
+	const { db } = await import("./idb-BhegYRS5.mjs").then((n) => n.M).then((n) => n.a);
 	db.chats.put(copy);
 	useApp.getState().toast(`已开分支「${copy.name}」`);
 }
@@ -3006,12 +3064,12 @@ function ensureWritingImage(id, placeholder) {
 		} : m)
 	}));
 }
-async function runReply(id, _userText, opening) {
+async function runReply(id, _userText, opening, regen = false) {
 	const c0 = chat(id);
 	if (!c0) return;
 	const grokModelId = useApp.getState().settings.grokModelId;
 	const wantImage = imageOn();
-	const imageInChat = wantImage && !resolveImageWrite(c0.imageModelId).split;
+	const imageInChat = wantImage && !resolveImageWrite(useApp.getState().settings.imageModelId).split;
 	const ctrl = new AbortController();
 	aborts.set(id, ctrl);
 	busy.add(id);
@@ -3021,11 +3079,13 @@ async function runReply(id, _userText, opening) {
 		messages: [...c.messages, placeholder]
 	}));
 	const extra = [
-		chatContextBlock(c0),
+		chatContextBlock(c0, { regen }),
 		groupFormatHint(c0, imageInChat),
 		opening ? "这是开场。根据开场场景，以角色口吻先说第一句。不要以用户身份说话。" : ""
 	].filter(Boolean).join("\n\n");
-	const msgs = historyMessages(chat(id)).filter((m) => m.content);
+	const live = chat(id);
+	const prevScene = previousRoundImagePrompt(live.messages, placeholder.id);
+	const msgs = historyMessages(live).filter((m) => m.content);
 	if (opening && msgs.length === 0) msgs.push({
 		role: "user",
 		content: "（开始场景，请角色先开口）"
@@ -3038,7 +3098,7 @@ async function runReply(id, _userText, opening) {
 			task: "chat",
 			grokModelId,
 			extraSystem: extra,
-			imageSystem: imageInChat ? chatImageSystem(c0) : void 0,
+			imageSystem: imageInChat ? chatImageSystem(c0, prevScene) : void 0,
 			messages: msgs,
 			...presetStyle(useApp.getState().settings, "chat", c0)
 		}, (text) => {
@@ -3072,7 +3132,7 @@ async function runReply(id, _userText, opening) {
 	const split = splitChatPrompt(raw);
 	const visibleOk = Boolean(split.visible.trim() || assist?.content.trim());
 	if (wantImage && assist && visibleOk) {
-		if (resolveImageWrite(latest.imageModelId).split) attachImage(id, assist.id, "rewrite", void 0, void 0, void 0, split.visible);
+		if (resolveImageWrite(useApp.getState().settings.imageModelId).split) attachImage(id, assist.id, "rewrite", void 0, void 0, void 0, split.visible);
 		else {
 			if (promptStarted && !split.started && raw) {
 				const again = splitChatPrompt(raw);
@@ -3162,7 +3222,8 @@ async function attachImage(id, msgId, mode = "auto", custom, customChars, parsed
 			} else {
 				const live = chat(id) ?? c;
 				const { shot, residual } = shotAndResidual(live.messages, msgId, shotText);
-				const tags = await writeImageTags(live, residual, useApp.getState().settings.grokModelId, shot || msg.content);
+				const prevScene = previousRoundImagePrompt(live.messages, msgId);
+				const tags = await writeImageTags(live, residual, useApp.getState().settings.grokModelId, shot || msg.content, prevScene);
 				grokTail = tags.base;
 				charTails = mapCharTails(live, tags.chars);
 				applyAbsent(id, tags.absent);
@@ -3243,24 +3304,31 @@ function applyAbsent(id, absent) {
 		}
 	}));
 }
-function setMemoryHint(chatId, text) {
-	useApp.getState().setUI({ memoryHint: text ? {
+function setMemoryHint(chatId, state) {
+	useApp.getState().setUI({ memoryHint: state ? {
 		chatId,
-		text
+		state
 	} : null });
 }
 async function maybeMemory(id) {
+	runMemory(id);
+}
+async function runMemory(id) {
 	const c = chat(id);
 	if (!c) return;
+	const { W, I } = foldWindow();
+	if (memoryCaughtUp(c.messages.length, c.memoryUntil || 0, W, I)) return;
 	const slice = nextFoldSlice(c);
 	if (!slice) return;
 	if (memoryBusy.has(id)) return;
 	const nAtStart = c.messages.length;
 	const epoch = memoryEpoch.get(id) ?? 0;
+	const ctrl = new AbortController();
+	memoryAborts.set(id, ctrl);
 	memoryBusy.add(id);
-	setMemoryHint(id, "生成记忆中");
+	setMemoryHint(id, "generating");
 	try {
-		const mem = await summarizeMemory(c, useApp.getState().settings.grokModelId, c.messages.slice(slice.start, slice.end), c.memory);
+		const mem = await summarizeMemory(c, useApp.getState().settings.grokModelId, c.messages.slice(slice.start, slice.end), c.memory, ctrl.signal);
 		if ((memoryEpoch.get(id) ?? 0) !== epoch) return;
 		const live = chat(id);
 		if (!live) return;
@@ -3274,15 +3342,94 @@ async function maybeMemory(id) {
 			...ch,
 			...applySnaps(pushSnap(ch.memorySnaps, snap))
 		}));
-		setMemoryHint(id, "记忆已生成");
+		setMemoryHint(id, "ok");
 		setTimeout(() => {
 			const ui = useApp.getState().ui.memoryHint;
-			if (ui?.chatId === id && ui.text === "记忆已生成") setMemoryHint(id, null);
+			if (ui?.chatId === id && ui.state === "ok") setMemoryHint(id, null);
 		}, 1e3);
-	} catch {
+	} catch (e) {
+		if (e.name === "AbortError") return;
 		if ((memoryEpoch.get(id) ?? 0) !== epoch) return;
 		setMemoryHint(id, null);
 	} finally {
+		if (memoryAborts.get(id) === ctrl) memoryAborts.delete(id);
+		memoryBusy.delete(id);
+	}
+}
+async function runManualMemory(id, mode) {
+	const c = chat(id);
+	if (!c) return false;
+	const { W, I } = foldWindow();
+	const n = c.messages.length;
+	const needed = foldCoveredEnd(n, W, I);
+	if (needed < 2) {
+		useApp.getState().toast("还不够长，先多聊几轮");
+		return false;
+	}
+	cancelMemory(id);
+	const epoch = (memoryEpoch.get(id) ?? 0) + 1;
+	memoryEpoch.set(id, epoch);
+	const ctrl = new AbortController();
+	memoryAborts.set(id, ctrl);
+	memoryBusy.add(id);
+	setMemoryHint(id, "generating");
+	try {
+		const grok = useApp.getState().settings.grokModelId;
+		const snaps = c.memorySnaps ?? [];
+		if (mode === "all") {
+			const text = await summarizeMemory(c, grok, c.messages.slice(0, needed), "（无）", ctrl.signal);
+			patch(id, (ch) => ({
+				...ch,
+				...applySnaps([{
+					covered: needed,
+					text,
+					foldAt: n
+				}])
+			}));
+		} else if (memoryCaughtUp(n, c.memoryUntil || 0, W, I)) {
+			const last = snaps[snaps.length - 1];
+			if (!last || last.covered < 2) {
+				useApp.getState().toast("还没有可重压的那一截");
+				setMemoryHint(id, null);
+				return false;
+			}
+			const prev = snaps[snaps.length - 2];
+			const start = prev?.covered ?? 0;
+			const text = await summarizeMemory(c, grok, c.messages.slice(start, last.covered), prev?.text ?? "（无）", ctrl.signal);
+			patch(id, (ch) => ({
+				...ch,
+				...applySnaps(pushSnap(ch.memorySnaps, {
+					covered: last.covered,
+					text,
+					foldAt: last.foldAt
+				}))
+			}));
+		} else {
+			const start = c.memoryUntil || 0;
+			const text = await summarizeMemory(c, grok, c.messages.slice(start, needed), c.memory || "（无）", ctrl.signal);
+			patch(id, (ch) => ({
+				...ch,
+				...applySnaps(pushSnap(ch.memorySnaps, {
+					covered: needed,
+					text,
+					foldAt: n
+				}))
+			}));
+		}
+		if ((memoryEpoch.get(id) ?? 0) !== epoch) return false;
+		setMemoryHint(id, "ok");
+		setTimeout(() => {
+			const ui = useApp.getState().ui.memoryHint;
+			if (ui?.chatId === id && ui.state === "ok") setMemoryHint(id, null);
+		}, 1e3);
+		return true;
+	} catch (e) {
+		if (e.name === "AbortError") return false;
+		useApp.getState().toast("总结失败，旧备忘还在");
+		setMemoryHint(id, null);
+		return false;
+	} finally {
+		if (memoryAborts.get(id) === ctrl) memoryAborts.delete(id);
 		memoryBusy.delete(id);
 	}
 }
@@ -3779,6 +3926,13 @@ function ChatPane({ chat }) {
 		sendUser(chat.id, t);
 	};
 	const portrait = chat.imageParams.height >= chat.imageParams.width;
+	const lastAssistId = [...chat.messages].reverse().find((m) => m.role !== "user")?.id;
+	const { W, I } = foldWindow();
+	const memOk = memoryCaughtUp(chat.messages.length, chat.memoryUntil || 0, W, I);
+	const memMine = memoryHint?.chatId === chat.id;
+	const memGenerating = memMine && memoryHint?.state === "generating";
+	const memOkFlash = memMine && memoryHint?.state === "ok";
+	const memFail = !memOk && !memGenerating && !memOkFlash;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "flex h-full min-h-0 flex-col",
 		children: [
@@ -3841,6 +3995,7 @@ function ChatPane({ chat }) {
 				}), chat.messages.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Bubble, {
 					chat,
 					msg: m,
+					showImageTray: chatImage && lastAssistId === m.id,
 					onUseOption: (t) => {
 						setDraft(t);
 						requestAnimationFrame(() => inputRef.current?.focus());
@@ -3902,9 +4057,22 @@ function ChatPane({ chat }) {
 							})
 						]
 					}),
-					memoryHint?.chatId === chat.id && memoryHint.text ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						className: "px-[52px] pb-1 text-[12px] text-faint",
-						children: memoryHint.text
+					memGenerating || memOkFlash || memFail ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-2 px-[52px] pb-1 text-[12px]",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: memFail ? "min-w-0 flex-1 text-danger" : memOkFlash ? "min-w-0 flex-1 text-good" : "min-w-0 flex-1 text-faint",
+							children: memGenerating ? "生成记忆中" : memOkFlash ? "记忆已生成" : "记忆生成失败"
+						}), memGenerating ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: "shrink-0 text-muted",
+							onClick: () => cancelMemory(chat.id),
+							children: "取消"
+						}) : memFail ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: "shrink-0 text-muted",
+							onClick: () => retryMemory(chat.id),
+							children: "重试"
+						}) : null]
 					}) : null,
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "flex items-end gap-2",
@@ -3960,7 +4128,7 @@ function jumpParams(section) {
 function cnToggle(on) {
 	return on ? "px-1 font-medium text-ink" : "px-1 text-muted";
 }
-function Bubble({ chat, msg, onUseOption }) {
+function Bubble({ chat, msg, showImageTray, onUseOption }) {
 	const [edit, setEdit] = (0, import_react.useState)(false);
 	const [text, setText] = (0, import_react.useState)(msg.content);
 	const url = cachedUrl(chat.avatarBlobId);
@@ -4076,9 +4244,10 @@ function Bubble({ chat, msg, onUseOption }) {
 						setEdit(false);
 					}
 				}),
-				msg.images.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ImageBlock, {
+				(msg.images.length > 0 || showImageTray && !generating) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ImageBlock, {
 					chat,
-					msg
+					msg,
+					allowEmpty: Boolean(showImageTray && !generating)
 				})
 			]
 		})]
@@ -4162,7 +4331,7 @@ function EditBox({ text, onChange, onOk, onCancel }) {
 		})]
 	});
 }
-function ImageBlock({ chat, msg }) {
+function ImageBlock({ chat, msg, allowEmpty }) {
 	const chatImage = useApp((s) => s.settings.chatImage !== false);
 	const done = msg.images.filter((g) => g.status === "done" && g.blobId);
 	const pendingImg = msg.images.find((g) => g.status !== "done" && g.status !== "error");
@@ -4205,7 +4374,7 @@ function ImageBlock({ chat, msg }) {
 	};
 	const lastError = [...msg.images].reverse().find((g) => g.status === "error");
 	const phaseLabel = genPhaseLabel(pendingImg?.status) || (kick === "rewrite" || kick === "auto" ? "写提示词中" : kick ? "上传中" : "");
-	if (msg.images.length === 0) return null;
+	if (msg.images.length === 0 && !allowEmpty) return null;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "mt-3",
 		children: [
@@ -4273,9 +4442,12 @@ function ImageBlock({ chat, msg }) {
 							" ",
 							phaseLabel || "准备中"
 						]
-					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					}) : lastError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 						className: "text-center text-danger",
-						children: genPhaseLabel("error", lastError?.error)
+						children: genPhaseLabel("error", lastError.error)
+					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "text-center text-muted",
+						children: "还没有配图"
 					})
 				})
 			}),
@@ -4286,9 +4458,9 @@ function ImageBlock({ chat, msg }) {
 						icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RefreshCw, { className: "size-4" }),
 						label: busy === "same" && phaseLabel ? phaseLabel : "重新生成",
 						busy: busy === "same",
-						disabled: locked,
+						disabled: locked || !current,
 						onClick: () => {
-							if (locked) return;
+							if (locked || !current) return;
 							setKick("same");
 							attachImage(chat.id, msg.id, "same");
 						}
@@ -6054,7 +6226,7 @@ function ParamsPane({ chat, mode = "chat" }) {
 							className: "font-serif text-2xl",
 							children: "聊天配图参数"
 						})]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ImageAiPicker, { chat })]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ImageAiPicker, {})]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 					className: "mb-3 mt-1 text-[12px] text-muted",
@@ -6583,20 +6755,22 @@ function AppearSelect({ className, onPick }) {
 		onReorder: (ids) => useApp.getState().reorderAppearances(ids)
 	});
 }
-function ImageAiPicker({ chat }) {
+function ImageAiPicker() {
 	const source = useApp((s) => s.settings.chatSource);
 	const llmModel = useApp((s) => s.settings.llmModel);
 	const starred = useApp((s) => s.settings.llmStarred);
 	const available = useApp((s) => s.settings.llmModels);
+	const imageModelId = useApp((s) => s.settings.imageModelId);
+	const imageModelPin = useApp((s) => s.settings.imageModelPin);
 	const ids = imagePickerModels({
 		chatSource: source,
 		llmStarred: starred,
 		llmModels: available,
 		llmModel,
-		imageModelId: chat.imageModelId,
-		imageModelPin: chat.imageModelPin
+		imageModelId,
+		imageModelPin
 	});
-	const value = chat.imageModelId || "__follow__";
+	const value = imageModelId || "__follow__";
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "shrink-0 pt-1 text-right",
 		children: [
@@ -6613,14 +6787,17 @@ function ImageAiPicker({ chat }) {
 						label: imageAiLabel(id),
 						short: imageAiLabel(id)
 					})),
-					onChange: (id) => useApp.getState().patchChat(chat.id, applyImageAiPick(chat, id)),
+					onChange: (id) => {
+						const s = useApp.getState().settings;
+						useApp.getState().setSettings(applyImageAiPick(s, id));
+					},
 					align: "left",
 					menu: "end"
 				})
 			}),
-			chat.imageModelId ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+			imageModelId ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
 				className: "mt-1 max-w-[11rem] text-[11px] leading-4 text-muted",
-				children: ["对白用顶栏，提示词用 ", imageAiLabel(chat.imageModelId)]
+				children: ["对白用顶栏，提示词用 ", imageAiLabel(imageModelId)]
 			}) : null
 		]
 	});
@@ -7194,7 +7371,9 @@ function FavDetail({ fav, currentBlob, onBack, onClose, onFill }) {
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 							className: "h-11 flex-1 rounded-full bg-ink text-[14px] font-medium text-bg",
 							onClick: () => {
-								useApp.getState().setPureParams(structuredClone(fav.params));
+								const next = structuredClone(fav.params);
+								if (next.seed != null) next.seedLocked = true;
+								useApp.getState().setPureParams(next);
 								useApp.getState().toast("已填入");
 								onFill();
 							},
@@ -7216,10 +7395,13 @@ function FavDetail({ fav, currentBlob, onBack, onClose, onFill }) {
 						label: "负面提示词",
 						text: p.negative || "（空）"
 					}),
-					chars.length > 0 && chars.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+					chars.length > 0 && chars.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
 						label: c.name ? `角色提示词 · ${c.name}` : `角色提示词 ${i + 1}`,
 						text: c.prompt
-					}, c.id)),
+					}), c.uc?.trim() ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+						label: c.name ? `角色负面 · ${c.name}` : `角色负面 ${i + 1}`,
+						text: c.uc
+					}) : null] }, c.id)),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "mt-3 text-[12px] leading-5 text-muted",
 						children: [
@@ -7234,8 +7416,16 @@ function FavDetail({ fav, currentBlob, onBack, onClose, onFill }) {
 							samplerLabel(p.sampler),
 							" · 种子 ",
 							p.seed ?? "随机",
+							p.seedLocked ? "（已锁）" : "",
 							" · CFG ",
-							p.scale
+							p.scale,
+							" · 噪声",
+							" ",
+							NOISE_SCHEDULES.find((n) => n.id === p.noiseSchedule)?.label ?? p.noiseSchedule,
+							" · rescale ",
+							p.cfgRescale,
+							p.varietyPlus ? " · Variety+" : "",
+							p.decrisper ? " · Decrisper" : ""
 						]
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
@@ -7350,14 +7540,19 @@ function HistCell({ item, onPreview }) {
 				onClick: (e) => {
 					e.stopPropagation();
 					const p = item.params;
-					if (p) useApp.getState().setPureParams(structuredClone(p));
-					else useApp.getState().setPureParams({
+					if (p) {
+						const next = structuredClone(p);
+						next.seed = item.seed;
+						next.seedLocked = true;
+						useApp.getState().setPureParams(next);
+					} else useApp.getState().setPureParams({
 						model: item.model,
 						width: item.width,
 						height: item.height,
 						steps: item.steps,
 						sampler: item.sampler,
 						seed: item.seed,
+						seedLocked: true,
 						negative: item.negative,
 						promptMid: item.prompt,
 						merged: true
@@ -7510,6 +7705,7 @@ function RoleEditor({ chat, mode }) {
 	const [busy, setBusy] = (0, import_react.useState)(null);
 	const [polished, setPolished] = (0, import_react.useState)(false);
 	const [charSel, setCharSel] = (0, import_react.useState)(0);
+	const [memPick, setMemPick] = (0, import_react.useState)(false);
 	const patch = (p) => useApp.getState().patchChat(chat.id, p);
 	const char = chat.characters[charSel] ?? chat.characters[0];
 	const autoPolish = useApp((s) => s.ui.autoPolish);
@@ -7517,6 +7713,9 @@ function RoleEditor({ chat, mode }) {
 	const busyRef = (0, import_react.useRef)(false);
 	const locked = !!busy;
 	const memTurns = memoryTurnStats(chat.messages.length, chat.memoryUntil);
+	const { W, I } = foldWindow();
+	const memOk = memoryCaughtUp(chat.messages.length, chat.memoryUntil || 0, W, I);
+	const memReady = foldCoveredEnd(chat.messages.length, W, I) >= 2;
 	const fieldBusyLabel = busy?.kind === "field" ? FIELD_LABELS[busy.key] || busy.key : "";
 	const syncChars = (characters, isMulti = chat.isMulti) => patch({
 		characters,
@@ -7598,7 +7797,7 @@ function RoleEditor({ chat, mode }) {
 		}));
 		useApp.getState().commitChat(chat.id);
 		if (mode === "create") {
-			const { sendOpening } = await import("./chat-actions-FC9VUIU_.mjs");
+			const { sendOpening } = await import("./chat-actions-Cs4lEO-w.mjs");
 			sendOpening(chat.id);
 		} else useApp.getState().toast("设定已保存");
 	};
@@ -7827,20 +8026,21 @@ function RoleEditor({ chat, mode }) {
 				children: [
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldLabel, {
 						sub: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-							className: "text-[11px] text-muted",
-							children: [
+							className: "flex items-center gap-1.5 text-[11px] text-muted",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
 								"（已对话 ",
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 									className: "text-good",
 									children: memTurns.spoken
 								}),
-								" 轮，已总结到第 ",
+								" 轮，已总结到第",
+								" ",
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 									className: "text-good",
 									children: memTurns.folded
 								}),
 								" 轮）"
-							]
+							] }), memOk ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "size-3.5 text-good" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "size-3.5 text-danger" })]
 						}),
 						hint: "聊久了会把更早的剧情压成备忘，下一轮当事实用。聊天里看不见。可改、可重总结、可清空。",
 						children: "长期记忆"
@@ -7876,30 +8076,13 @@ function RoleEditor({ chat, mode }) {
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(GhostBtn, {
 								className: "h-10 w-auto min-w-0 flex-1 whitespace-nowrap px-3 text-[13px]",
-								onClick: async () => {
+								onClick: () => {
 									if (locked) return;
-									setBusy({ kind: "mem" });
-									try {
-										const { W, I } = foldWindow();
-										const n = chat.messages.length;
-										const end = foldCoveredEnd(n, W, I);
-										if (end < 2) {
-											useApp.getState().toast("还不够长，先多聊几轮");
-											return;
-										}
-										invalidateMemory(chat.id);
-										const mem = await summarizeMemory(chat, grok, chat.messages.slice(0, end), "（无）");
-										patch(applySnaps([{
-											covered: end,
-											text: mem,
-											foldAt: n
-										}]));
-										useApp.getState().toast("已重新总结");
-									} catch {
-										useApp.getState().toast("总结失败，旧备忘还在");
-									} finally {
-										setBusy(null);
+									if (!memReady) {
+										useApp.getState().toast("还不够长，先多聊几轮");
+										return;
 									}
+									setMemPick(true);
 								},
 								children: busy?.kind === "mem" ? "总结中…" : "重新总结"
 							}),
@@ -7914,6 +8097,40 @@ function RoleEditor({ chat, mode }) {
 						]
 					})
 				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Modal, {
+				open: memPick,
+				onClose: () => setMemPick(false),
+				title: "重新总结",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mb-4 text-[13px] leading-5 text-muted",
+					children: memOk ? "记忆已经齐了。总结到当前只重压最近那一截。" : "记忆还落后。总结到当前会从缺口一次收到位。"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex flex-col gap-2",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PrimaryBtn, {
+						disabled: locked || !memReady,
+						busy: busy?.kind === "mem",
+						onClick: async () => {
+							if (locked) return;
+							setMemPick(false);
+							setBusy({ kind: "mem" });
+							if (await runManualMemory(chat.id, "current")) useApp.getState().toast("已总结到当前");
+							setBusy(null);
+						},
+						children: "总结到当前"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(GhostBtn, {
+						className: "h-11",
+						disabled: locked || !memReady,
+						onClick: async () => {
+							if (locked) return;
+							setMemPick(false);
+							setBusy({ kind: "mem" });
+							if (await runManualMemory(chat.id, "all")) useApp.getState().toast("已全部重新总结");
+							setBusy(null);
+						},
+						children: "全部重新总结"
+					})]
+				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "pointer-events-none h-4" }),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -9044,7 +9261,7 @@ function MultiCreateModal() {
 					const draft = makeDraft();
 					pushDraft(draft);
 					useApp.getState().commitChat(draft.id);
-					const { sendOpening } = await import("./chat-actions-FC9VUIU_.mjs");
+					const { sendOpening } = await import("./chat-actions-Cs4lEO-w.mjs");
 					sendOpening(draft.id);
 				},
 				children: "跳过，开始聊天"
@@ -9059,4 +9276,4 @@ function Home() {
 	});
 }
 //#endregion
-export { invalidateMemory as a, sendUser as c, Home as component, editMessage as i, routes_Zp8JG0Hy_exports as l, attachImage as n, regenMessage as o, branchFrom as r, sendOpening as s, abortChat as t };
+export { editMessage as a, retryMemory as c, Home as component, sendUser as d, routes_h7rF3gxm_exports as f, cancelMemory as i, runManualMemory as l, attachImage as n, invalidateMemory as o, branchFrom as r, regenMessage as s, abortChat as t, sendOpening as u };

@@ -1,38 +1,77 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { GROK_MODELS } from "./constants.ts";
 import {
   FOLLOW_IMAGE_AI,
+  IMAGE_HDR_API,
+  IMAGE_HDR_GROK,
   applyImageAiPick,
   imagePickerModels,
   llmIdentity,
   resolveImageWrite,
 } from "./image-ai.ts";
 
+const grokIds = GROK_MODELS.map((m) => m.id);
+
 describe("imagePickerModels", () => {
-  it("starts with 与聊天一致, then the chat top-bar list", () => {
+  it("on API: chat list, then a Grok header, then all Grok models in top-bar order", () => {
+    const rows = imagePickerModels({
+      chatSource: "api",
+      llmConnected: true,
+      llmStarred: ["agy-high", "ds-flash"],
+      llmModels: ["agy-high", "ds-flash", "other"],
+      llmModel: "agy-high",
+    });
     assert.deepEqual(
-      imagePickerModels({
-        chatSource: "api",
-        llmStarred: ["agy-high", "ds-flash"],
-        llmModels: ["agy-high", "ds-flash", "other"],
-        llmModel: "agy-high",
-      }),
-      [FOLLOW_IMAGE_AI, "agy-high", "ds-flash"],
+      rows.map((r) => r.id),
+      [FOLLOW_IMAGE_AI, "agy-high", "ds-flash", IMAGE_HDR_GROK, ...grokIds],
+    );
+    assert.equal(rows.find((r) => r.id === IMAGE_HDR_GROK)?.header, "Grok");
+  });
+
+  it("on Grok with API connected: Grok list, then an API header, then the chat list", () => {
+    const rows = imagePickerModels({
+      chatSource: "grok",
+      llmConnected: true,
+      llmStarred: ["ds-flash"],
+      llmModels: ["ds-flash", "other"],
+      llmModel: "agy-high",
+    });
+    assert.deepEqual(
+      rows.map((r) => r.id),
+      [FOLLOW_IMAGE_AI, ...grokIds, IMAGE_HDR_API, "agy-high", "ds-flash"],
+    );
+    assert.equal(rows.find((r) => r.id === IMAGE_HDR_API)?.header, "API");
+  });
+
+  it("on Grok with API disconnected: no API block", () => {
+    const rows = imagePickerModels({
+      chatSource: "grok",
+      llmConnected: false,
+      llmStarred: ["ds-flash"],
+      llmModels: ["ds-flash"],
+      llmModel: "ds-flash",
+      imageModelId: "grok-4.6-high",
+    });
+    assert.deepEqual(
+      rows.map((r) => r.id),
+      [FOLLOW_IMAGE_AI, ...grokIds],
     );
   });
 
-  it("keeps a selected grok pick and an API pin at the end when chatting on Grok", () => {
-    const ids = imagePickerModels({
-      chatSource: "grok",
-      llmStarred: [],
-      llmModels: [],
-      llmModel: "",
-      imageModelId: "grok-4.6-high",
-      imageModelPin: "ds-flash",
+  it("keeps a selected delisted API model in red, at the end of the API block", () => {
+    const rows = imagePickerModels({
+      chatSource: "api",
+      llmConnected: true,
+      llmStarred: ["agy-high"],
+      llmModels: ["agy-high"],
+      llmModel: "agy-high",
+      imageModelId: "gone-model",
     });
-    assert.equal(ids[0], FOLLOW_IMAGE_AI);
-    assert.ok(ids.includes("grok-4.6-medium"));
-    assert.equal(ids[ids.length - 1], "ds-flash");
+    const grokAt = rows.findIndex((r) => r.id === IMAGE_HDR_GROK);
+    const goneAt = rows.findIndex((r) => r.id === "gone-model");
+    assert.ok(goneAt > 0 && goneAt < grokAt);
+    assert.equal(rows[goneAt]?.danger, true);
   });
 });
 

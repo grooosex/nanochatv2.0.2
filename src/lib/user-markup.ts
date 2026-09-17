@@ -115,3 +115,19 @@ export function shotAndResidual(
     residual: recentSceneForImage(before, 4),
   };
 }
+
+/** Immediate previous assistant/narrator only. Empty if that round has no successful image. */
+export function previousRoundImagePrompt(
+  messages: { id: string; role: string; images?: { status: string; prompt?: string }[] }[],
+  msgId: string,
+): string {
+  const idx = messages.findIndex((m) => m.id === msgId);
+  const from = idx >= 0 ? idx - 1 : messages.length - 1;
+  for (let i = from; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role !== "assistant" && m.role !== "narrator") continue;
+    const img = [...(m.images || [])].reverse().find((g) => g.status === "done" && g.prompt);
+    return (img?.prompt || "").trim();
+  }
+  return "";
+}

@@ -3,65 +3,66 @@ import { t as __exportAll$1 } from "./rolldown-runtime-D7D4PA-g.mjs";
 import { t as Dexie } from "../_libs/dexie.mjs";
 import { t as clsx } from "../_libs/clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/idb-ic1T74Kn.js
-var idb_ic1T74Kn_exports = /* @__PURE__ */ __exportAll({
-	$: () => emptyCharacter,
-	A: () => moveId,
-	B: () => FULLBODY_TAG,
-	C: () => restoreSampler,
-	D: () => cn,
-	E: () => autoScrollNearEdge,
-	F: () => COOLDOWN_MS,
-	G: () => PLACEHOLDERS,
-	H: () => GROK_MODELS,
-	I: () => DEFAULT_GROK,
-	J: () => SENSITIVE_PREFIX,
-	K: () => RESOLUTIONS,
-	L: () => DEFAULT_LLM_PARAMS,
-	M: () => randomSeed,
-	N: () => uid,
-	O: () => downloadBlob,
-	P: () => uniqueNumberedName,
-	Q: () => defaultPureParams,
-	R: () => DEFAULT_NAI_BASE,
-	S: () => presetStyle,
-	T: () => uniquePresetName,
-	U: () => NAI_MODELS,
-	V: () => FURRY_TAG,
-	W: () => NOISE_SCHEDULES,
-	X: () => UNCENSORED_TAG,
-	Y: () => UC,
-	Z: () => defaultImageParams,
-	_: () => chatPickerModels,
+//#region node_modules/.nitro/vite/services/ssr/assets/idb-BhegYRS5.js
+var idb_BhegYRS5_exports = /* @__PURE__ */ __exportAll({
+	$: () => defaultPureParams,
+	A: () => indexFromY,
+	B: () => DEFAULT_STATUS_BAR,
+	C: () => presetStyle,
+	D: () => autoScrollNearEdge,
+	E: () => uniquePresetName,
+	F: () => uniqueNumberedName,
+	G: () => NOISE_SCHEDULES,
+	H: () => FURRY_TAG,
+	I: () => COOLDOWN_MS,
+	J: () => SAMPLERS,
+	K: () => PLACEHOLDERS,
+	L: () => DEFAULT_GROK,
+	M: () => nearestScroller,
+	N: () => randomSeed,
+	O: () => cn,
+	P: () => uid,
+	Q: () => defaultImageParams,
+	R: () => DEFAULT_LLM_PARAMS,
+	S: () => parseChatCompletionPreset,
+	T: () => samplerPatch,
+	U: () => GROK_MODELS,
+	V: () => FULLBODY_TAG,
+	W: () => NAI_MODELS,
+	X: () => UC,
+	Y: () => SENSITIVE_PREFIX,
+	Z: () => UNCENSORED_TAG,
+	_: () => applyLlmPick,
 	a: () => idb_exports,
-	b: () => activePreset,
+	b: () => snapshotLlmAccount,
 	c: () => putImage,
 	d: () => applyImageAiPick,
-	et: () => joinPromptParts,
+	et: () => emptyCharacter,
 	f: () => imageAiLabel,
-	g: () => applyLlmPick,
-	h: () => resolveImageWrite,
+	g: () => resolveImageWrite,
+	h: () => llmIdentity,
 	i: () => deleteImage,
-	j: () => nearestScroller,
-	k: () => indexFromY,
+	it: () => shortModelLabel,
+	j: () => moveId,
+	k: () => downloadBlob,
 	l: () => rememberUrl,
-	m: () => llmIdentity,
+	m: () => imageWriteFields,
 	n: () => db,
-	nt: () => normalizePureParams,
+	nt: () => migrateGrokId,
 	o: () => imageUrl,
 	p: () => imagePickerModels,
-	q: () => SAMPLERS,
+	q: () => RESOLUTIONS,
 	r: () => defaultSettings,
-	rt: () => shortModelLabel,
+	rt: () => normalizePureParams,
 	s: () => loadAll,
 	t: () => cachedUrl,
-	tt: () => migrateGrokId,
+	tt: () => joinPromptParts,
 	u: () => FOLLOW_IMAGE_AI,
-	v: () => pruneStarred,
-	w: () => samplerPatch,
-	x: () => parseChatCompletionPreset,
-	y: () => snapshotLlmAccount,
-	z: () => DEFAULT_STATUS_BAR
+	v: () => chatPickerModels,
+	w: () => restoreSampler,
+	x: () => activePreset,
+	y: () => pruneStarred,
+	z: () => DEFAULT_NAI_BASE
 });
 var GROK_MODELS = [
 	{
@@ -728,6 +729,18 @@ function applyImageAiPick(current, pick) {
 		imageModelPin: isGrokModelId(pick) ? pin : pick
 	};
 }
+function imageWriteFields(imageModelId) {
+	const dest = resolveImageWrite(imageModelId);
+	if (!dest.split) return {};
+	if (dest.via === "grok") return {
+		via: "grok",
+		grokModelId: dest.grokModelId
+	};
+	return {
+		via: "api",
+		model: dest.model
+	};
+}
 function resolveImageWrite(imageModelId) {
 	if (!imageModelId) return { split: false };
 	if (isGrokModelId(imageModelId)) return {
@@ -772,6 +785,8 @@ var defaultSettings = () => ({
 	naiConnected: false,
 	cooldownUntil: 0,
 	chatImage: true,
+	imageModelId: null,
+	imageModelPin: null,
 	theme: "light"
 });
 var HuiyuDB = class extends Dexie {
@@ -849,6 +864,8 @@ async function loadAll() {
 			stParamSnapshot: stActiveId && raw?.stParamSnapshot ? mergeLlmParams(raw.stParamSnapshot) : null,
 			chatSource: raw?.chatSource === "api" && raw?.llmConnected ? "api" : "grok",
 			chatImage: raw?.chatImage !== false,
+			imageModelId: typeof raw?.imageModelId === "string" ? raw.imageModelId : null,
+			imageModelPin: typeof raw?.imageModelPin === "string" ? raw.imageModelPin : null,
 			llmIdentity: typeof raw?.llmIdentity === "string" && raw.llmIdentity ? raw.llmIdentity : raw?.llmConnected && raw?.llmBase && raw?.llmKey ? llmIdentity(String(raw.llmBase), String(raw.llmKey)) : ""
 		}
 	};
@@ -887,4 +904,4 @@ function cachedUrl(id) {
 	return id ? urlCache.get(id) ?? null : null;
 }
 //#endregion
-export { shortModelLabel as $, downloadBlob as A, migrateGrokId as B, chatPickerModels as C, defaultPureParams as D, defaultImageParams as E, imageUrl as F, presetStyle as G, nearestScroller as H, indexFromY as I, randomSeed as J, pruneStarred as K, joinPromptParts as L, idb_ic1T74Kn_exports as M, imageAiLabel as N, defaultSettings as O, imagePickerModels as P, samplerPatch as Q, llmIdentity as R, cachedUrl as S, db as T, normalizePureParams as U, moveId as V, parseChatCompletionPreset as W, resolveImageWrite as X, rememberUrl as Y, restoreSampler as Z, UNCENSORED_TAG as _, DEFAULT_STATUS_BAR as a, applyLlmPick as b, FURRY_TAG as c, NOISE_SCHEDULES as d, snapshotLlmAccount as et, PLACEHOLDERS as f, UC as g, SENSITIVE_PREFIX as h, DEFAULT_NAI_BASE as i, emptyCharacter as j, deleteImage as k, GROK_MODELS as l, SAMPLERS as m, DEFAULT_GROK as n, uniqueNumberedName as nt, FOLLOW_IMAGE_AI as o, RESOLUTIONS as p, putImage as q, DEFAULT_LLM_PARAMS as r, uniquePresetName as rt, FULLBODY_TAG as s, COOLDOWN_MS as t, uid as tt, NAI_MODELS as u, activePreset as v, cn as w, autoScrollNearEdge as x, applyImageAiPick as y, loadAll as z };
+export { samplerPatch as $, downloadBlob as A, loadAll as B, chatPickerModels as C, defaultPureParams as D, defaultImageParams as E, imageUrl as F, parseChatCompletionPreset as G, moveId as H, imageWriteFields as I, putImage as J, presetStyle as K, indexFromY as L, idb_BhegYRS5_exports as M, imageAiLabel as N, defaultSettings as O, imagePickerModels as P, restoreSampler as Q, joinPromptParts as R, cachedUrl as S, db as T, nearestScroller as U, migrateGrokId as V, normalizePureParams as W, rememberUrl as X, randomSeed as Y, resolveImageWrite as Z, UNCENSORED_TAG as _, DEFAULT_STATUS_BAR as a, applyLlmPick as b, FURRY_TAG as c, NOISE_SCHEDULES as d, shortModelLabel as et, PLACEHOLDERS as f, UC as g, SENSITIVE_PREFIX as h, DEFAULT_NAI_BASE as i, uniquePresetName as it, emptyCharacter as j, deleteImage as k, GROK_MODELS as l, SAMPLERS as m, DEFAULT_GROK as n, uid as nt, FOLLOW_IMAGE_AI as o, RESOLUTIONS as p, pruneStarred as q, DEFAULT_LLM_PARAMS as r, uniqueNumberedName as rt, FULLBODY_TAG as s, COOLDOWN_MS as t, snapshotLlmAccount as tt, NAI_MODELS as u, activePreset as v, cn as w, autoScrollNearEdge as x, applyImageAiPick as y, llmIdentity as z };

@@ -33,6 +33,8 @@ export const defaultSettings = (): Settings => ({
   naiConnected: false,
   cooldownUntil: 0,
   chatImage: true,
+  imageModelId: null,
+  imageModelPin: null,
   theme: "light",
 });
 
@@ -109,6 +111,8 @@ export async function loadAll() {
     stParamSnapshot: stActiveId && raw?.stParamSnapshot ? mergeLlmParams(raw.stParamSnapshot) : null,
     chatSource: raw?.chatSource === "api" && raw?.llmConnected ? ("api" as const) : ("grok" as const),
     chatImage: raw?.chatImage !== false,
+    imageModelId: typeof raw?.imageModelId === "string" ? raw.imageModelId : null,
+    imageModelPin: typeof raw?.imageModelPin === "string" ? raw.imageModelPin : null,
     llmIdentity:
       typeof raw?.llmIdentity === "string" && raw.llmIdentity
         ? raw.llmIdentity

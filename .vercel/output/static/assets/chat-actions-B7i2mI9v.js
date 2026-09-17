@@ -1,1 +1,0 @@
-import{c as e}from"./routes-B3KsFdVJ.js";export{e as sendOpening};

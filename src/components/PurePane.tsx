@@ -2,13 +2,13 @@ import { useEffect, useRef, useState, type PointerEvent as PE, type ReactNode } 
 import { Bookmark, Check, ChevronLeft, Clock, Download, ScanSearch, SlidersHorizontal, X } from "lucide-react";
 import { parseNaiPng } from "@/lib/png-meta";
 import { buildNaiPayload, modelLabel, modelShort, samplerLabel, samplerShort } from "@/lib/nai";
-import { COOLDOWN_MS, NAI_MODELS } from "@/lib/constants";
+import { COOLDOWN_MS, NAI_MODELS, NOISE_SCHEDULES } from "@/lib/constants";
 import { imageUrl } from "@/lib/idb";
 import { fakePureChat, useApp } from "@/lib/store";
 import { promptPreview } from "@/lib/presets";
 import type { FavoriteItem, HistoryItem, ImageParams } from "@/lib/types";
 import { afterPaint, generateNai, genPhaseLabel } from "@/lib/engine";
-import { downloadBlob, randomSeed, uid } from "@/lib/utils";
+import { downloadBlob, randomSeed, uid, sortHistoryNewestFirst } from "@/lib/utils";
 import { ParamsPane } from "./ParamsPane";
 import { IconBtn, PrimaryBtn, TextInput, useCooldown } from "./ui-kit";
 
@@ -28,12 +28,14 @@ export function PurePane() {
   const followLatest = useRef(true);
   const prevDone = useRef(0);
 
-  const done = history.filter((h) => h.status === "done" && h.blobId);
+  const done = sortHistoryNewestFirst(history.filter((h) => h.status === "done" && h.blobId));
   const item = done[idx] ?? done[0];
 
   useEffect(() => {
-    if (done.length > prevDone.current && followLatest.current) setIdx(0);
-    else if (idx >= done.length && done.length > 0) setIdx(0);
+    if (done.length > prevDone.current) {
+      setIdx(0);
+      followLatest.current = true;
+    } else if (idx >= done.length && done.length > 0) setIdx(0);
     prevDone.current = done.length;
   }, [done.length, idx]);
 
@@ -165,6 +167,7 @@ export function PurePane() {
       {sheet === "hist" && (
         <HistSheet
           items={done}
+          activeId={item?.id}
           onClose={closeSheet}
           onPreview={(i) => {
             followLatest.current = i === 0;
@@ -303,7 +306,9 @@ function FavDetail({
             <button
               className="h-11 flex-1 rounded-full bg-ink text-[14px] font-medium text-bg"
               onClick={() => {
-                useApp.getState().setPureParams(structuredClone(fav.params));
+                const next = structuredClone(fav.params);
+                if (next.seed != null) next.seedLocked = true;
+                useApp.getState().setPureParams(next);
                 useApp.getState().toast("已填入");
                 onFill();
               }}
@@ -323,9 +328,18 @@ function FavDetail({
           <Field label="正面提示词" text={promptPreview(p) || "（空）"} />
           <Field label="负面提示词" text={p.negative || "（空）"} />
           {chars.length > 0 &&
-            chars.map((c, i) => <Field key={c.id} label={c.name ? `角色提示词 · ${c.name}` : `角色提示词 ${i + 1}`} text={c.prompt} />)}
+            chars.map((c, i) => (
+              <div key={c.id}>
+                <Field label={c.name ? `角色提示词 · ${c.name}` : `角色提示词 ${i + 1}`} text={c.prompt} />
+                {c.uc?.trim() ? <Field label={c.name ? `角色负面 · ${c.name}` : `角色负面 ${i + 1}`} text={c.uc} /> : null}
+              </div>
+            ))}
           <div className="mt-3 text-[12px] leading-5 text-muted">
-            {modelLabel(p.model)} · {p.width}×{p.height} · {p.steps}步 · {samplerLabel(p.sampler)} · 种子 {p.seed ?? "随机"} · CFG {p.scale}
+            {modelLabel(p.model)} · {p.width}×{p.height} · {p.steps}步 · {samplerLabel(p.sampler)} · 种子 {p.seed ?? "随机"}
+            {p.seedLocked ? "（已锁）" : ""} · CFG {p.scale} · 噪声{" "}
+            {NOISE_SCHEDULES.find((n) => n.id === p.noiseSchedule)?.label ?? p.noiseSchedule} · rescale {p.cfgRescale}
+            {p.varietyPlus ? " · Variety+" : ""}
+            {p.decrisper ? " · Decrisper" : ""}
           </div>
           <button
             className="mt-4 mb-2 h-11 w-full rounded-full border border-line bg-card text-[14px] disabled:opacity-40"
@@ -370,10 +384,12 @@ function RatioThumb({ blobId, w, h }: { blobId?: string; w: number; h: number })
 
 function HistSheet({
   items,
+  activeId,
   onClose,
   onPreview,
 }: {
   items: HistoryItem[];
+  activeId?: string;
   onClose: () => void;
   onPreview: (i: number) => void;
 }) {
@@ -381,7 +397,7 @@ function HistSheet({
     <Sheet title="历史" onClose={onClose}>
       <div className="grid grid-cols-3 gap-2">
         {items.map((h, i) => (
-          <HistCell key={h.id} item={h} onPreview={() => onPreview(i)} />
+          <HistCell key={h.id} item={h} active={h.id === activeId} onPreview={() => onPreview(i)} />
         ))}
         {items.length === 0 && <div className="col-span-3 py-10 text-center text-[13px] text-muted">还没有历史</div>}
       </div>
@@ -389,7 +405,7 @@ function HistSheet({
   );
 }
 
-function HistCell({ item, onPreview }: { item: HistoryItem; onPreview: () => void }) {
+function HistCell({ item, active, onPreview }: { item: HistoryItem; active?: boolean; onPreview: () => void }) {
   const [u, setU] = useState<string | null>(null);
   const hold = useRef<number | null>(null);
   const held = useRef(false);
@@ -405,18 +421,23 @@ function HistCell({ item, onPreview }: { item: HistoryItem; onPreview: () => voi
     clear();
     hold.current = window.setTimeout(() => {
       held.current = true;
-      useApp.getState().deleteHistory(item.id);
     }, HOLD_MS);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
   return (
     <div
-      className="relative overflow-hidden rounded-[8px] bg-dim"
+      className={
+        active
+          ? "relative overflow-hidden rounded-[8px] bg-dim ring-2 ring-red-500 ring-offset-1 ring-offset-bg"
+          : "relative overflow-hidden rounded-[8px] bg-dim"
+      }
       onPointerDown={onDown}
-      onPointerUp={() => {
+      onPointerUp={(e) => {
         const was = held.current;
         clear();
-        if (!was) onPreview();
+        e.stopPropagation();
+        if (was) useApp.getState().deleteHistory(item.id);
+        else onPreview();
       }}
       onPointerCancel={clear}
       onContextMenu={(e) => e.preventDefault()}
@@ -433,8 +454,12 @@ function HistCell({ item, onPreview }: { item: HistoryItem; onPreview: () => voi
         onClick={(e) => {
           e.stopPropagation();
           const p = item.params;
-          if (p) useApp.getState().setPureParams(structuredClone(p));
-          else {
+          if (p) {
+            const next = structuredClone(p);
+            next.seed = item.seed;
+            next.seedLocked = true;
+            useApp.getState().setPureParams(next);
+          } else {
             useApp.getState().setPureParams({
               model: item.model,
               width: item.width,
@@ -442,6 +467,7 @@ function HistCell({ item, onPreview }: { item: HistoryItem; onPreview: () => voi
               steps: item.steps,
               sampler: item.sampler,
               seed: item.seed,
+              seedLocked: true,
               negative: item.negative,
               promptMid: item.prompt,
               merged: true,

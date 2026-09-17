@@ -6,10 +6,15 @@ import {
   foldCoveredEnd,
   foldIntervalMessages,
   isPlausibleMemory,
+  MEMORY_PARAMS,
+  memoryCaughtUp,
+  memoryFailReason,
   memoryTurnStats,
+  nextAutoSlice,
   planFold,
   rewindSnaps,
 } from "./chat-memory.ts";
+import { sortHistoryNewestFirst } from "./utils.ts";
 
 describe("foldIntervalMessages", () => {
   it("is window minus 6 turns, floored at 4", () => {
@@ -45,6 +50,26 @@ describe("planFold", () => {
   it("retries the same chunk if the last fold never landed", () => {
     assert.deepEqual(planFold(34, 0, 0, W, I), { start: 0, end: 20 });
     assert.deepEqual(planFold(52, 0, 0, W, I), { start: 0, end: 20 });
+  });
+});
+
+describe("memoryCaughtUp / nextAutoSlice", () => {
+  const W = 32;
+  const I = 20;
+  it("is caught up before the first fold and after covering the target", () => {
+    assert.equal(memoryCaughtUp(29, 0, W, I), true);
+    assert.equal(memoryCaughtUp(30, 0, W, I), false);
+    assert.equal(memoryCaughtUp(30, 20, W, I), true);
+    assert.equal(memoryCaughtUp(116, 100, W, I), true);
+    assert.equal(memoryCaughtUp(116, 80, W, I), false);
+  });
+  it("auto-folds the first 10 turns at the early trigger", () => {
+    assert.deepEqual(nextAutoSlice(30, 0, W, I), { start: 0, end: 20 });
+    assert.equal(nextAutoSlice(30, 20, W, I), null);
+  });
+  it("catches up one interval at a time while behind", () => {
+    assert.deepEqual(nextAutoSlice(116, 80, W, I), { start: 80, end: 100 });
+    assert.equal(nextAutoSlice(116, 100, W, I), null);
   });
 });
 
@@ -98,5 +123,39 @@ describe("isPlausibleMemory", () => {
     assert.equal(isPlausibleMemory(""), false);
     assert.equal(isPlausibleMemory("好的"), false);
     assert.equal(isPlausibleMemory("他们在雨里进门，外套还湿着，项链没摘。客厅灯没开。后来在沙发上做过。"), true);
+  });
+});
+
+describe("MEMORY_PARAMS", () => {
+  it("is a low-temp factual fold, independent of chat sampler", () => {
+    assert.equal(MEMORY_PARAMS.temperature, 0.3);
+    assert.equal(MEMORY_PARAMS.topP, 1);
+    assert.equal(MEMORY_PARAMS.frequencyPenalty, 0);
+    assert.equal(MEMORY_PARAMS.presencePenalty, 0);
+    assert.equal(MEMORY_PARAMS.maxTokens, 4096);
+  });
+});
+
+describe("memoryFailReason", () => {
+  it("maps skip / invalid / abort", () => {
+    assert.equal(memoryFailReason(new Error("memory-invalid")), "回得太短或不像备忘");
+    assert.equal(memoryFailReason(new Error("memory-skip")), "没有可收的对白");
+    const abort = new Error("Aborted");
+    abort.name = "AbortError";
+    assert.equal(memoryFailReason(abort), "已取消");
+  });
+});
+
+describe("sortHistoryNewestFirst", () => {
+  it("puts newest createdAt first", () => {
+    const rows = [
+      { id: "a", createdAt: 1 },
+      { id: "c", createdAt: 3 },
+      { id: "b", createdAt: 2 },
+    ];
+    assert.deepEqual(
+      sortHistoryNewestFirst(rows).map((r) => r.id),
+      ["c", "b", "a"],
+    );
   });
 });

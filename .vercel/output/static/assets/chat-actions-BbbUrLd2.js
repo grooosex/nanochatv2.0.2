@@ -1,0 +1,1 @@
+import{d as e}from"./routes-BY0XlIhk.js";export{e as sendOpening};

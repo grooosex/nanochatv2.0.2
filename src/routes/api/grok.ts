@@ -172,9 +172,10 @@ export const Route = createFileRoute("/api/grok")({
         });
         if (!result.ok) return Response.json({ ok: false, error: result.error }, { status: 500 });
         const json = (await result.res.json()) as {
-          choices?: { message?: { content?: string } }[];
+          choices?: { message?: { content?: string; reasoning_content?: string; reasoning?: string } }[];
         };
-        let text = json.choices?.[0]?.message?.content ?? "";
+        const msg = json.choices?.[0]?.message;
+        let text = (msg?.content || msg?.reasoning_content || msg?.reasoning || "").trim();
         text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
         return Response.json({ ok: true, text });
       },

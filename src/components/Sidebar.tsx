@@ -17,9 +17,8 @@ import {
 } from "lucide-react";
 import { cn, autoScrollNearEdge, indexFromY, moveId } from "@/lib/utils";
 import { listedChats, useApp } from "@/lib/store";
-import { cachedUrl } from "@/lib/idb";
 import { replyStoryText } from "@/lib/reply-markup";
-import { Avatar, IconBtn } from "./ui-kit";
+import { ChatAvatar, IconBtn } from "./ui-kit";
 
 const HOLD_MS = 420;
 
@@ -519,7 +518,6 @@ function ChatRow({
     chat.remark ||
     (lastMsg && lastMsg.role !== "user" ? replyStoryText(lastMsg.content) || lastMsg.content : lastMsg?.content) ||
     chat.opening;
-  const url = cachedUrl(chat.avatarBlobId);
   const menu = ui.menuId === id;
 
   return (
@@ -550,7 +548,7 @@ function ChatRow({
           dragging && "drag-dim",
         )}
       >
-        <Avatar url={url} name={chat.name} dim={active && !ui.selectMode} />
+        <ChatAvatar chat={chat} dim={active && !ui.selectMode} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1 truncate text-[15px] font-medium">
             {chat.starred && <Star className="size-3 fill-primary text-primary" />}

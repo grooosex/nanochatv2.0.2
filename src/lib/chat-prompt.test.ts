@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { splitChatPrompt, chatImageSystem, IMAGE_SYSTEM, IMAGE_SHOT_RULES, systemFor } from "./prompts.ts";
+import { splitChatPrompt, chatImageSystem, IMAGE_SYSTEM, IMAGE_SHOT_RULES, IMAGE_BG_RULES, systemFor, statusBarSkeleton } from "./prompts.ts";
 import { emptyCharacter, defaultImageParams } from "./constants.ts";
 import type { Chat } from "./types.ts";
 
@@ -81,10 +81,14 @@ describe("chatImageSystem", () => {
     assert.match(sys, /tentacles/);
     assert.match(sys, /guro/);
     assert.match(sys, /【本镜】/);
+    assert.match(sys, /【背景】/);
     assert.match(sys, /<<<PROMPT>>>/);
     assert.match(sys, /<<<END>>>/);
     assert.ok(sys.includes(IMAGE_SYSTEM));
     assert.ok(sys.includes(IMAGE_SHOT_RULES));
+    assert.ok(sys.includes(IMAGE_BG_RULES));
+    assert.doesNotMatch(sys, /地牢/);
+    assert.doesNotMatch(sys, /水槽/);
   });
 
   it("tells the model whether adult boost is on", () => {
@@ -105,5 +109,16 @@ describe("systemFor chat", () => {
     const sys = systemFor("chat", "【要求总览】写细");
     assert.doesNotMatch(sys, /<<<PROMPT>>>/);
     assert.doesNotMatch(sys, /tentacles/);
+  });
+});
+
+describe("statusBarSkeleton", () => {
+  it("keeps titles and drops filled values", () => {
+    const raw = "状态栏:\n心情:极致惊恐\n身体:失温";
+    const out = statusBarSkeleton(raw);
+    assert.match(out, /状态栏:/);
+    assert.match(out, /心情:/);
+    assert.doesNotMatch(out, /极致惊恐/);
+    assert.doesNotMatch(out, /失温/);
   });
 });
