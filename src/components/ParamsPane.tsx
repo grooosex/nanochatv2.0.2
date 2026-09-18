@@ -450,18 +450,15 @@ export function ParamsPane({ chat, mode = "chat" }: { chat: Chat; mode?: "chat" 
                     }
                   : undefined
               }
-              onRemove={
-                p.characters.length > 1
-                  ? () =>
-                      useApp.getState().setUI({
-                        confirm: {
-                          title: "删除角色",
-                          body: `删除「${ch.name || `角色${i + 1}`}」的提示词栏？`,
-                          danger: true,
-                          onOk: () => patch({ characters: p.characters.filter((x) => x.id !== ch.id) }),
-                        },
-                      })
-                  : undefined
+              onRemove={() =>
+                useApp.getState().setUI({
+                  confirm: {
+                    title: "删除角色",
+                    body: `删除「${ch.name || `角色${i + 1}`}」的提示词栏？`,
+                    danger: true,
+                    onOk: () => patch({ characters: p.characters.filter((x) => x.id !== ch.id) }),
+                  },
+                })
               }
             />
           ))}

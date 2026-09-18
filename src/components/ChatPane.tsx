@@ -32,6 +32,7 @@ export function ChatPane({ chat }: { chat: Chat }) {
   const chatImage = useApp((s) => s.settings.chatImage !== false);
   const memoryHint = useApp((s) => s.ui.memoryHint);
   const imageTrayOffer = useApp((s) => s.ui.imageTrayOffer);
+  const editUser = useApp((s) => (s.ui.editUserMsg?.chatId === chat.id ? s.ui.editUserMsg : null));
   const scroller = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [atBottom, setAtBottom] = useState(true);
@@ -45,6 +46,10 @@ export function ChatPane({ chat }: { chat: Chat }) {
     setAtBottom(bottom);
   }, [chat.id]);
 
+  useEffect(() => {
+    if (editUser) requestAnimationFrame(() => inputRef.current?.focus());
+  }, [editUser?.msgId]);
+
   const onScroll = () => {
     const el = scroller.current;
     if (!el) return;
@@ -53,8 +58,28 @@ export function ChatPane({ chat }: { chat: Chat }) {
     useApp.getState().patchChat(chat.id, { scrollTop: el.scrollTop });
   };
 
+  const startUserEdit = (msgId: string, content: string) => {
+    const backup = editUser ? editUser.backup : draft;
+    useApp.getState().setUI({ editUserMsg: { chatId: chat.id, msgId, backup } });
+    useApp.getState().setComposerDraft(chat.id, content);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const cancelUserEdit = () => {
+    if (!editUser) return;
+    useApp.getState().setComposerDraft(chat.id, editUser.backup);
+    useApp.getState().setUI({ editUserMsg: null });
+  };
+
   const send = () => {
     const t = draft;
+    if (editUser) {
+      const { msgId, backup } = editUser;
+      useApp.getState().setUI({ editUserMsg: null });
+      useApp.getState().setComposerDraft(chat.id, backup);
+      void editMessage(chat.id, msgId, t);
+      return;
+    }
     useApp.getState().setComposerDraft(chat.id, "");
     void sendUser(chat.id, t);
   };
@@ -122,9 +147,11 @@ export function ChatPane({ chat }: { chat: Chat }) {
               Boolean(imageTrayOffer && imageTrayOffer.chatId === chat.id && imageTrayOffer.msgId === m.id && lastAssistId === m.id)
             }
             onUseOption={(t) => {
+              if (editUser) return;
               useApp.getState().setComposerDraft(chat.id, t);
               requestAnimationFrame(() => inputRef.current?.focus());
             }}
+            onEditUser={m.role === "user" ? () => startUserEdit(m.id, m.content) : undefined}
           />
         ))}
       </div>
@@ -232,11 +259,18 @@ export function ChatPane({ chat }: { chat: Chat }) {
           <button
             onClick={send}
             className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-on-primary"
-            aria-label="发送"
+            aria-label={editUser ? "保存" : "发送"}
           >
             <ArrowUp className="size-5" />
           </button>
         </div>
+        {editUser ? (
+          <div className="flex justify-center pt-1">
+            <button type="button" className="text-[12px] text-muted" onClick={cancelUserEdit}>
+              取消编辑
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -256,40 +290,42 @@ function Bubble({
   msg,
   showImageTray,
   onUseOption,
+  onEditUser,
 }: {
   chat: Chat;
   msg: ChatMessage;
   showImageTray?: boolean;
   onUseOption?: (text: string) => void;
+  onEditUser?: () => void;
 }) {
   const [edit, setEdit] = useState(false);
   const [text, setText] = useState(msg.content);
+  const editRef = useRef<HTMLTextAreaElement>(null);
   const generating = msg.role !== "user" && !msg.content;
   const names = [msg.characterName, chat.name, ...chat.characters.map((c) => c.name), "角色"];
+  const editingUser = useApp((s) => s.ui.editUserMsg?.msgId === msg.id);
+
+  const startAssistEdit = () => {
+    setText(msg.content);
+    setEdit(true);
+    requestAnimationFrame(() => editRef.current?.focus());
+  };
 
   if (msg.role === "user") {
     return (
       <div className="mb-4 flex flex-col items-end">
-        <div className="w-fit max-w-[85%] rounded-[18px] border border-line bg-card px-4 py-2.5">
+        <div
+          className={cn(
+            "w-fit max-w-[85%] rounded-[18px] border px-4 py-2.5",
+            editingUser ? "border-primary bg-card" : "border-line bg-card",
+          )}
+        >
           <div className="whitespace-pre-wrap text-[14px] leading-relaxed text-ink">{msg.content}</div>
         </div>
         <div className="mt-1.5 flex justify-end gap-1.5">
-          <Mini onClick={() => setEdit(true)} icon={<Pencil className="size-3" />} label="编辑" />
+          <Mini onClick={() => onEditUser?.()} icon={<Pencil className="size-3" />} label="编辑" />
           <Mini onClick={() => void branchFrom(chat.id, msg.id)} icon={<GitBranch className="size-3" />} label="开分支" />
         </div>
-        {edit && (
-          <div className="w-full max-w-[85%]">
-            <EditBox
-              text={text}
-              onChange={setText}
-              onCancel={() => setEdit(false)}
-              onOk={() => {
-                void editMessage(chat.id, msg.id, text);
-                setEdit(false);
-              }}
-            />
-          </div>
-        )}
       </div>
     );
   }
@@ -313,24 +349,44 @@ function Bubble({
               <i className="animate-pulse">·</i>
             </span>
           </div>
+        ) : edit ? (
+          <textarea
+            ref={editRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className="serif-body min-h-[120px] w-full resize-y bg-transparent text-[16px] leading-relaxed text-narrate outline-none"
+          />
         ) : (
           <ReplyView text={msg.content} names={names} onUseOption={onUseOption} />
         )}
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <Mini onClick={() => void regenMessage(chat.id, msg.id)} icon={<RefreshCw className="size-3" />} label="重新生成" />
-          <Mini onClick={() => void branchFrom(chat.id, msg.id)} icon={<GitBranch className="size-3" />} label="开分支" />
-          <Mini onClick={() => setEdit(true)} icon={<Pencil className="size-3" />} label="编辑" />
-        </div>
-        {edit && (
-          <EditBox
-            text={text}
-            onChange={setText}
-            onCancel={() => setEdit(false)}
-            onOk={() => {
-              void editMessage(chat.id, msg.id, text);
-              setEdit(false);
-            }}
-          />
+        {edit ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              className="inline-flex h-7 items-center rounded-full border border-line bg-card px-3 text-[12px] text-muted"
+              onClick={() => setEdit(false)}
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-7 items-center rounded-full bg-primary px-3 text-[12px] text-on-primary"
+              onClick={() => {
+                void editMessage(chat.id, msg.id, text);
+                setEdit(false);
+              }}
+            >
+              保存
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <Mini onClick={() => void regenMessage(chat.id, msg.id)} icon={<RefreshCw className="size-3" />} label="重新生成" />
+            <Mini onClick={() => void branchFrom(chat.id, msg.id)} icon={<GitBranch className="size-3" />} label="开分支" />
+            {!generating && (
+              <Mini onClick={startAssistEdit} icon={<Pencil className="size-3" />} label="编辑" />
+            )}
+          </div>
         )}
         {(msg.images.length > 0 || (showImageTray && !generating)) && (
           <ImageBlock chat={chat} msg={msg} allowEmpty={Boolean(showImageTray && !generating)} />
@@ -427,32 +483,6 @@ function Mini({ icon, label, onClick }: { icon: React.ReactNode; label: string; 
       {icon}
       {label}
     </button>
-  );
-}
-
-function EditBox({
-  text,
-  onChange,
-  onOk,
-  onCancel,
-}: {
-  text: string;
-  onChange: (s: string) => void;
-  onOk: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="mt-2">
-      <TextArea value={text} onChange={(e) => onChange(e.target.value)} />
-      <div className="mt-2 flex gap-2">
-        <button className="rounded-full bg-primary px-4 py-1.5 text-[12px] text-on-primary" onClick={onOk}>
-          保存
-        </button>
-        <button className="px-3 text-[12px] text-muted" onClick={onCancel}>
-          取消
-        </button>
-      </div>
-    </div>
   );
 }
 
